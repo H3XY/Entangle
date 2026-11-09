@@ -102,18 +102,22 @@ def one_copy_model(n, reps=3):
                    description=f"{n} qubits, {reps}-layer RY/RZ+CX ansatz, read out qubit 0")
 
 
-def _su2_block(b, a, c):
-    """Trainable two-qubit block: RY RZ on both, CX, RY RZ on both (8 weights)."""
-    for _ in range(2):
+def _su2_block(b, a, c, w=None):
+    """Trainable two-qubit block: RY RZ on both, CX, RY RZ on both (8 weights).
+
+    Pass `w` (8 weight indices) to reuse existing weights instead of making new ones."""
+    w = list(b.new_weights(8)) if w is None else list(w)
+    k = 0
+    for layer in range(2):
         for q in (a, c):
-            wy, wz = b.new_weights(2)
-            b.qc.ry(b.p(wy), q)
-            b.qc.rz(b.p(wz), q)
-        if _ == 0:
+            b.qc.ry(b.p(w[k]), q)
+            b.qc.rz(b.p(w[k + 1]), q)
+            k += 2
+        if layer == 0:
             b.qc.cx(a, c)
 
 
-def two_copy_model(n):
+def two_copy_model(n, readout="any", shared=False):
     """Two copies of the state (2n qubits): a trainable block on each pair (q_i, q_i')
     of matching qubits, then class 1 iff any pair measures 11.
 
@@ -125,13 +129,25 @@ def two_copy_model(n):
     """
     m = 2 * n
     b = _Builder(m)
+    w = b.new_weights(8) if shared else None   # shared: one block reused on every pair
     for i in range(n):
-        _su2_block(b, i, n + i)
-    readout = np.array([any(_bit(k, i) and _bit(k, n + i) for i in range(n))
-                        for k in range(2 ** m)], dtype=bool)
-    return b.model("QNN 2-copy", readout, copies=2,
-                   description=f"{m} qubits (2 copies), trainable block per qubit pair, "
-                               f"class 1 if any pair reads 11")
+        _su2_block(b, i, n + i, w)
+    singlets = np.array([sum(_bit(k, i) and _bit(k, n + i) for i in range(n))
+                         for k in range(2 ** m)])
+    if readout == "any":
+        mask, rule, name = singlets > 0, "any pair reads 11", "QNN 2-copy"
+    elif readout == "parity":
+        # SWAP of the whole register = product of pair SWAPs = (-1)^(number of singlets),
+        # so P(odd number of pairs read 11) = (1 - Tr rho^2) / 2: the global purity.
+        mask, rule, name = singlets % 2 == 1, "an odd number of pairs read 11", "QNN 2-copy (parity)"
+    else:
+        raise ValueError(readout)
+    if shared:
+        name += ", shared"
+    return b.model(name, mask, copies=2,
+                   description=f"{m} qubits (2 copies), "
+                               f"{'one shared trainable block' if shared else 'a trainable block'} per qubit pair, "
+                               f"class 1 if {rule}")
 
 
 # --------------------------------------------------------------------------- #

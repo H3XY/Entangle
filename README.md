@@ -21,10 +21,23 @@ close behind: 0.94–0.99 against the QNN's 0.995–1.000. On Ising phases every
 works (0.96–1.00) and the QCNN has no edge. On a simulated IBM device, noise breaks
 quantum and classical models alike until both are recalibrated on 20 states
 prepared on the device. A small run on real IBM hardware (`ibm_marrakesh`) behaved
-the same way, with milder noise. **The quantum benefit we measure is real but small. It
-comes from the two-copy measurement, not from the trainable circuit.** It shows
-up as shot efficiency: with 64 copies of each test state, the two-copy QNN
-classifies entanglement at 0.96, against 0.79 for classical shadows (stage 3).
+the same way, with milder noise. On those tasks, which depend on single-qubit
+properties, **the quantum benefit is real but small**. It shows up as shot
+efficiency: with 64 copies of each test state, the two-copy QNN classifies
+entanglement at 0.96, against 0.79 for classical shadows (stage 3).
+
+**On a global property the gap becomes exponential (stage 5).** To tell pure states
+from mixed ones at 90% accuracy, the best single-copy classical method needs 128
+copies of each state at 2 qubits and 4,096 at 6 qubits. That is roughly double
+per added qubit, as theory predicts. The two-copy QNN needs 16–32 copies at
+every size. In every stage the advantage comes from measuring two copies
+together, not from the trainable circuit.
+
+**Stage 6** is a toy lattice gauge theory: Z2 gauge theory with one qubit per
+link. It shows confinement and an energy gap that closes only at a phase
+transition. It is *not* Yang–Mills theory and says nothing toward the
+Millennium problem's proof; [docs/YANG_MILLS.md](docs/YANG_MILLS.md) explains
+what that problem asks and what is known.
 
 ## How it works
 
@@ -156,6 +169,95 @@ better: 0.87 vs the QCNN's 0.79 at 4 copies. The ZZ correlations are directly
 measurable, while the QCNN's single readout bit is a noisier summary. The curves
 meet by 256 copies.
 
+### Stage 5: a global property (pure or mixed?)
+
+Stages 1–3 use labels that depend on single-qubit properties, which classical
+shadows estimate cheaply. Stage 5 tests the case where theory proves an
+exponential separation (Huang, Kueng & Preskill 2021; Chen, Cotler, Huang & Li
+2022): telling **Haar-random pure states** from **random rank-2 mixed states**
+(Tr ρ² between 0.5 and 0.58), on 2–6 qubits. Both classes average to the
+maximally mixed state, and their single-qubit marginals become alike as n grows.
+Only the purity of the whole state separates them.
+
+- **QNN 2-copy (parity).** The same pairwise blocks as stage 1, with class 1 if an
+  *odd* number of pairs read 11. The SWAP of the whole register is the product of
+  the pair SWAPs, so with Bell-basis blocks P(class 1) = (1 − Tr ρ²)/2 (checked in
+  `tests/`).
+- **Classical shadows.** Random-Pauli snapshots turned into an unbiased estimate of
+  the *global* purity, plus single-qubit purities, with the best of 3 learners.
+  This is the best known single-copy strategy. A rank-4 factorisation makes the
+  estimator about 6ⁿ·4n operations instead of S²·n.
+- Mixed states are handled as purifications (ρ = AA†) in the simulator and the
+  snapshot sampler.
+
+![Stage 5](results/stage5_purity.png)
+
+Copies of each test state needed for 90% test accuracy (200 training states,
+mean of 3 seeds):
+
+| Qubits | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|
+| QNN 2-copy (learned SWAP test) | 32 | 16 | 32 | 32 | 32 |
+| Classical shadows (best of 3) | 128 | 256 | 512 | 1,024 | 4,096 |
+
+At 6 qubits and 64 copies, the QNN scores 0.98 and classical shadows 0.55. The
+one-copy QNN is at chance (0.47–0.52) at every size and every copy count.
+Full tables: [results/stage5_purity.md](results/stage5_purity.md).
+
+**Training ran into a barren plateau.** With a separate trainable block per
+pair, training from a random start works up to 4 qubits but fails at 5 in one of
+three seeds (0.85 ± 0.21). The parity readout multiplies contributions from every
+pair, so random-start gradients shrink exponentially with n, the textbook barren
+plateau of global cost functions. Two fixes work:
+- sharing one block across all pairs (1.00 at 5 qubits from scratch)
+- training that block at 2 qubits and transferring it to larger n (1.00 at every
+  size, with 30 fine-tuning steps)
+
+The transferred model is the one in the table. So the exponential advantage at
+*measurement* time comes with a *training* hazard that has to be designed around.
+
+### Stage 6: a toy lattice gauge theory (not Yang–Mills)
+
+Z2 lattice gauge theory in 2+1 dimensions on an L × L torus, one qubit per link
+(8, 18 and 32 qubits for L = 2, 3, 4) ([entangle/gauge.py](entangle/gauge.py)):
+
+    H = − Σ_plaquettes Z Z Z Z − g Σ_links X
+
+Physical states obey Gauss's law at every vertex. Spectra come from Wegner
+duality, an exact map to the 2D quantum Ising model with one spin per
+plaquette. The tests check it against direct simulation of the link qubits.
+The infinite-lattice transition is at g_c ≈ 0.3285.
+
+![Stage 6](results/stage6_gauge.png)
+
+| | L = 2 | L = 3 | L = 4 |
+|---|---|---|---|
+| Gap at g = 0.1 (deconfined) | 3.48 | 3.27 | 3.21 |
+| Gap at g = 1.0 (confined) | 5.90 | 7.10 | 7.29 |
+| Minimum gap (near g_c) | 2.83 | 1.77 | 1.27 |
+| Creutz ratio (string tension) at g = 1.0 | – | 0.72 | 1.04 |
+
+- **Both phases have a gap** that settles as the lattice grows.
+- **Near the transition the gap shrinks** with every size, consistent with it
+  closing in infinite volume.
+- **Confinement switches on past g_c.** The Creutz ratio, an estimate of the
+  string tension, turns positive there, and Wilson loops decay with the
+  enclosed area.
+- **Phase classification** of the 8-qubit ground states works for the QCNN
+  (1.00 exact, 0.96 with 256 copies) and for classical learners on Z/X
+  snapshots of plaquettes and electric fields (0.97–0.98) alike. As with Ising,
+  there is no quantum edge.
+
+Full tables: [results/stage6_gauge.md](results/stage6_gauge.md).
+
+The connection to Yang–Mills is conceptual only. A mass gap is not automatic:
+here it closes at a phase transition. The conjecture for 4D SU(N) is that no
+such transition separates the provably gapped strong-coupling regime from the
+continuum. Z2 has no gluons, no asymptotic freedom and no continuum limit, and
+every finite lattice has a gap anyway. See
+[docs/YANG_MILLS.md](docs/YANG_MILLS.md) for the problem statement, the known
+rigorous results, and why no computation here amounts to progress on a proof.
+
 ### Stage 4: hardware
 
 Each test state is prepared on the device, then classified there.
@@ -231,6 +333,8 @@ python stage1_entanglement.py          # ~15 s   2-4 qubit entanglement classifi
 python stage2_phases.py                # ~2 min  4-8 qubit Ising phases, QCNN
 python stage3_efficiency.py            # ~9 min  accuracy vs training states and vs shots
 python stage4_hardware.py --fake       # ~1 min  IBM device noise model, no account needed
+python stage5_purity.py                # ~35 min pure vs mixed, 2-6 qubits, copies-needed scaling
+python stage6_gauge.py                 # ~1 min  Z2 lattice gauge theory: gap, confinement, phases
 python -m pytest -q tests              # correctness checks
 ./security/audit_deps.sh               # pip-audit scan -> results/dependency_audit.md
 ```
@@ -262,14 +366,16 @@ Results go to `results/stage4_hardware_ibm.*`. The full default run is about
 ## Repo layout
 
 ```
-stage1_entanglement.py   stage2_phases.py   stage3_efficiency.py   stage4_hardware.py
+stage1_entanglement.py ... stage6_gauge.py    one CLI per stage
+docs/YANG_MILLS.md       the Millennium problem: statement, known results, what stage 6 does not show
 entangle/
-  states.py      random product/entangled states, Meyer-Wallach Q, concurrence, Ising ground states
+  states.py      product/entangled states, Meyer-Wallach Q, concurrence, Ising ground states, pure/mixed states
   circuits.py    1-copy QNN, 2-copy QNN, QCNN, generic ansatz (tied weights, readout masks)
   sim.py         batched state-vector simulator with adjoint gradients
-  qnn.py         training (exact probabilities, L-BFGS-B, readout calibration) and shot sampling
-  measure.py     Pauli snapshots (random, Z/X, fixed bases), feature estimates, measurement circuits
+  qnn.py         training (exact probabilities, L-BFGS-B, readout calibration), mixed-state batches, shots
+  measure.py     Pauli snapshots, feature estimates, shadow global-purity estimator, measurement circuits
   classical.py   logistic regression / RBF SVM / MLP baselines
+  gauge.py       Z2 lattice gauge theory: lattice, Wegner-dual solver, Wilson loops, link-qubit states
   report.py      JSON, Markdown and chart output
 tests/           simulator vs full unitary, adjoint vs parameter shift, vs SamplerQNN, physics checks
 security/        pip-audit dependency scan
@@ -278,15 +384,18 @@ results/         JSON, Markdown tables and charts for every stage, dependency au
 
 ## Limitations
 
-- **Small systems.** We test 2–4 qubits for entanglement (8 with two copies) and
-  4–8 for Ising, all simulated exactly. Proven quantum advantages in learning
-  from experiments (Huang et al., *Science* 2022) appear for properties such as
-  *global* purity, where classical snapshots need exponentially many shots.
-  Single-qubit purities, used here, are cheap for classical shadows too. That is
-  why the classical gap is small.
-- **The two-copy model is physics-informed.** Its pairwise blocks and
-  "any pair reads 11" readout are designed so that the SWAP test is expressible.
-  Training finds it reliably, but a generic ansatz on 2n qubits might not.
+- **Small systems.** We test 2–4 qubits for entanglement (8 with two copies),
+  4–8 for Ising and 2–6 for purity (12 with two copies), all simulated exactly.
+  The exponential trend in stage 5 is measured over five sizes. It matches the
+  theory, but it is not a proof of scaling, which the cited papers provide.
+- **Stage 5 states are Haar-random,** chosen because the theory is cleanest for
+  them. Preparing Haar-random states needs circuits whose depth grows
+  exponentially, so stage 5 is simulation only. A hardware version would use
+  shallow random circuits (approximate designs) instead.
+- **The two-copy model is physics-informed.** Its pairwise blocks and its
+  readouts ("any pair reads 11", "an odd number of pairs read 11") are designed
+  so that the SWAP test is expressible. Training finds it, with weight sharing or
+  transfer for the global readout. A generic ansatz on 2n qubits might not.
 - **Two copies at once** need both copies in quantum memory together. That is
   harder than measuring copies one at a time, which is all the classical
   baseline needs.
