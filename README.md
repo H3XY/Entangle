@@ -30,8 +30,11 @@ entanglement at 0.96, against 0.79 for classical shadows (stage 3).
 from mixed ones at 90% accuracy, the best single-copy classical method needs 128
 copies of each state at 2 qubits and 4,096 at 6 qubits. That is roughly double
 per added qubit, as theory predicts. The two-copy QNN needs 16–32 copies at
-every size. In every stage the advantage comes from measuring two copies
-together, not from the trainable circuit.
+every size (16–64 per seed). **On real hardware** (stage 7, `ibm_marrakesh`, 2
+qubits, two independent runs), the two-copy test needs 64 copies for 90% and
+classical shadows 128: the advantage survives noise but halves. In every stage
+the advantage comes from measuring two copies together, not from the trainable
+circuit.
 
 **Stage 6** is a toy lattice gauge theory: Z2 gauge theory with one qubit per
 link. It shows confinement and an energy gap that closes only at a phase
@@ -105,6 +108,21 @@ How it scales:
   are more qubits to average over. With all 4ⁿ−1 Pauli features they get worse,
   from too many noisy features.
 
+**How close do classical shadows get?** Very close: this task does *not* separate
+quantum from classical. These are means ± std over 5 seeds, at 256 copies per
+test state ([results/review_seeds_stage1.md](results/review_seeds_stage1.md)):
+
+| Qubits | QNN 2-copy | Shadows, purity features | Shadows, all Pauli features | Shadows, exact estimates |
+|---|---|---|---|---|
+| 2 | 0.991 ± 0.006 | 0.951 ± 0.009 | 0.935 ± 0.011 | 1.000 |
+| 3 | 0.992 ± 0.004 | 0.975 ± 0.005 | 0.947 ± 0.021 | 1.000 |
+| 4 | 0.996 ± 0.005 | 0.988 ± 0.006 | 0.903 ± 0.015 | 1.000 |
+
+With exact (infinite-shot) estimates the classical learners are perfect too.
+The label depends only on single-qubit purities, which shadows estimate
+efficiently. The gap closes as n grows, from 0.04 at 2 qubits to 0.01 at
+4 qubits. The task where the gap opens is stage 5.
+
 ### Stage 2: phases of the transverse-field Ising chain
 
 Ground states of H = −Σ ZᵢZᵢ₊₁ − h Σ Xᵢ on open chains of 4, 6 and 8 qubits come
@@ -135,6 +153,41 @@ weights of the generic ansatz, but it has no accuracy advantage. One finding
 from the build: the 3-parameter conv and pool units from the Qiskit QCNN tutorial
 output exactly 0.5 on these spin-flip-symmetric states, so they cannot learn.
 General RY/RZ + CX units fix that, and a regression test covers it.
+
+**What exactly the QCNN is.** It keeps the architecture of Cong, Choi & Lukin
+(2019):
+- alternating convolution and pooling layers
+- weights shared within each layer
+- pooling that halves the active qubits each time, down to one readout qubit
+
+The building blocks differ from the Qiskit tutorial in three ways:
+- **Convolution unit:** RY RZ on both qubits, CX, then RY RZ on both again
+  (8 weights per layer), applied to neighbouring pairs on a ring. It replaces
+  the tutorial's 3-parameter unit.
+- **Pooling unit:** RY RZ on the source qubit, CX from source to sink, then RY RZ
+  on the sink (4 weights per layer). It replaces the tutorial's 3-parameter pool.
+- **No mid-circuit measurement.** Pooling is coherent, which gives the same
+  output distribution for a single final readout.
+
+So it is a QCNN in architecture, with hardware-efficient units. If a reviewer
+reserves "QCNN" for the tutorial's specific units, call it "QCNN-style". Code:
+[entangle/circuits.py](entangle/circuits.py), `qcnn_model`, `_conv`, `_pool`.
+
+**How hard is the task?** It is easy. Over 5 seeds, a logistic regression on
+*one* exact number already matches every model. Using the mean nearest-neighbour
+⟨ZᵢZᵢ₊₁⟩ or the mean ⟨Xᵢ⟩ alone gives 0.994 ± 0.005 at 4 qubits and
+0.995 ± 0.006 at 8. All the errors come from states near the critical point.
+About 20% of test states have |h − 1| < 0.2:
+- On those states the QCNN scores 0.96 ± 0.04 at 4 qubits and 0.97 ± 0.03 at 8.
+- On those states classical learners on exact Z/X expectations score
+  0.90 ± 0.03 and 0.97 ± 0.01.
+- Away from the critical point every model is perfect.
+
+So stage 2 shows that the QCNN *works* on quantum data. It cannot show a quantum
+advantage, because there is no headroom. See
+[results/review_seeds_stage2.md](results/review_seeds_stage2.md). The same holds
+for stage 6, where the mean electric field alone gives 0.998 ± 0.002
+([results/review_seeds_stage6.md](results/review_seeds_stage6.md)).
 
 ### Stage 3: data efficiency
 
@@ -204,17 +257,117 @@ At 6 qubits and 64 copies, the QNN scores 0.98 and classical shadows 0.55. The
 one-copy QNN is at chance (0.47–0.52) at every size and every copy count.
 Full tables: [results/stage5_purity.md](results/stage5_purity.md).
 
-**Training ran into a barren plateau.** With a separate trainable block per
-pair, training from a random start works up to 4 qubits but fails at 5 in one of
-three seeds (0.85 ± 0.21). The parity readout multiplies contributions from every
-pair, so random-start gradients shrink exponentially with n, the textbook barren
-plateau of global cost functions. Two fixes work:
+The table uses one definition of copies needed: the smallest power of 2 at which
+the **mean** accuracy over the 3 seeds reaches 90%. Per seed, each run's own
+smallest power of 2 is:
+
+| Qubits | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|
+| QNN 2-copy, per seed | 64, 16, 16 | 16, 16, 16 | 32, 16, 16 | 16, 32, 16 | 64, 32, 16 |
+| Classical shadows, per seed | 128, 128, 128 | 256, 256, 256 | 512, 512, 512 | 2048, 1024, 2048 | 2048, 4096, 4096 |
+
+The QNN needs 16–64 copies at every size. Classical shadows need 128–4,096,
+growing with n. The two ranges never overlap. The grid can sit below the per-seed
+median when the mean only just crosses 90%: at 5 qubits the mean is 0.901 at
+1,024 copies. See
+[results/review_seeds_stage5.md](results/review_seeds_stage5.md).
+
+**Training: a measured barren plateau.** With a separate trainable block per
+pair, training from a random start works up to 4 qubits. At 5 qubits it failed
+in one of three seeds: 0.555, 1.000 and 1.000, so 0.85 ± 0.26. We measured the
+cause directly instead of inferring it ([review_gradients.py](review_gradients.py)).
+The method:
+- Draw random weights from the same distribution training starts from.
+- Compute exact gradients of the class signal D = mean P(class 1 | mixed) −
+  mean P(class 1 | pure), over 100 draws × 3 data seeds.
+
+![Gradient variance](results/review_gradients.png)
+
+| Qubits per copy | 2 | 3 | 4 | 5 | 6 | 7 |
+|---|---|---|---|---|---|---|
+| Per-pair blocks: Var[∂D/∂w] | 9.5e-4 | 2.5e-4 | 6.6e-5 | 1.7e-5 | 4.2e-6 | 1.0e-6 |
+| Shared block: Var[∂D/∂w] | 2.6e-3 | 1.2e-3 | 5.6e-4 | 3.5e-4 | 2.2e-4 | 1.6e-4 |
+
+- **Per-pair blocks:** the gradient variance falls by a factor of 3.9 per added
+  qubit, close to 4ⁿ. That is the exponential decay that defines a barren plateau
+  for a global readout on 2n qubits.
+- **Shared block:** the variance also falls, but by a factor of only 1.7 per
+  qubit, with 8 weights at every size. Over n = 2–7 the shared model keeps
+  gradients more than 100 times larger at 7 qubits.
+- **No starting point had a gradient norm below 10⁻³** at these sizes. The
+  failure at 5 qubits is small gradients plus a rugged landscape, not exactly
+  flat starts.
+
+Full table: [results/review_gradients.md](results/review_gradients.md).
+
+Two fixes work:
 - sharing one block across all pairs (1.00 at 5 qubits from scratch)
 - training that block at 2 qubits and transferring it to larger n (1.00 at every
   size, with 30 fine-tuning steps)
 
 The transferred model is the one in the table. So the exponential advantage at
 *measurement* time comes with a *training* hazard that has to be designed around.
+
+### Stage 7: the purity test on real hardware
+
+Stage 7 runs the stage 5 experiment at 2 qubits on `ibm_marrakesh`
+([stage7_hardware_purity.py](stage7_hardware_purity.py)). That turns the headline
+comparison into a hardware result.
+
+**Setup:**
+- **States.** A rank-2 mixed state needs an ancilla, so every state is prepared
+  as a 3-qubit purification and the ancilla is never measured. Pure states use
+  the same 3-qubit preparation with the ancilla in |0⟩. Both classes compile to
+  exactly 7 CZ gates, so circuit depth does not reveal the label.
+- **2-copy QNN.** Two preparations on 6 qubits, then the trained shared-block
+  parity model on the 4 system qubits: 512 shots per state.
+- **Classical shadows.** The same preparation, measured in all 9 X/Y/Z bases on
+  the system qubits at 113 shots each. The snapshots give the global and local
+  purity estimates.
+- **Data.** 60 test states and 20 calibration states, balanced.
+- **Runs.** Two independent runs on the same states and the same physical
+  qubits: 4, 6, 5 for copy 1 and 8, 17, 7 for copy 2 (`--layout`).
+- **Records.** A calibration snapshot of those qubits is saved with each run.
+- **Comparison.** FakeMarrakesh, the noise model of the same device, run the
+  same way.
+
+At 1,024 copies, every model is at 0.98–1.00 on the device, and 1.00 after
+recalibration. So the comparison is copies needed. We subsample the device
+counts to fewer shots (20 resamples per point, readout recalibrated):
+
+![Stage 7 on ibm_marrakesh](results/stage7_hardware_purity_ibm.png)
+
+| Copies of each test state | 16 | 32 | 64 | 128 | 256 | 1024 |
+|---|---|---|---|---|---|---|
+| QNN 2-copy, ibm_marrakesh | 0.77 | 0.86 | 0.93 | 0.98 | 1.00 | 1.00 |
+| Classical shadows, ibm_marrakesh | – | 0.65 | 0.79 | 0.91 | 0.96 | 1.00 |
+| QNN 2-copy, FakeMarrakesh | 0.84 | 0.91 | 0.97 | 0.99 | 1.00 | 1.00 |
+| Classical shadows, FakeMarrakesh | – | 0.67 | 0.81 | 0.91 | 0.96 | 1.00 |
+
+These are means of 2 runs; the run-to-run std is at most 0.03. Classical shadows
+need at least 18 copies, 2 per basis setting.
+
+**Findings:**
+- **Copies needed for 90% on hardware:** 64 for the 2-copy QNN and 128 for
+  classical shadows.
+- **Noise hits the quantum side harder.** In noise-free simulation at this size
+  it is 32 vs 128 (stage 5). The 6-qubit two-copy circuit has about 19 CZ gates
+  after routing, against 7 for a shadow circuit. So the advantage survives on
+  hardware, but halves.
+- **FakeMarrakesh understates the noise here.** The QNN's mean output shift,
+  device minus exact P(class 1), is +0.038 and +0.041 on the real device,
+  against +0.015 and +0.017 on FakeMarrakesh.
+- **Pure states shift more** (+0.05 to +0.06) than mixed ones (+0.02): noise
+  makes everything look more mixed.
+- **Both methods track the true purity.** The QNN's 1 − 2P correlates with the
+  true Tr ρ² at r = 0.986 in both runs, and the shadow estimate at r = 0.975 and
+  0.981. Both read low, by 0.09–0.10 for the QNN and 0.06–0.07 for shadows.
+
+At 2 qubits, single-copy shadows are cheap, so the gap is a constant factor of
+2. The exponential gap in stage 5 needs more qubits, which means deeper
+preparation circuits than this device can run cleanly. Results:
+[results/stage7_hardware_purity_ibm.md](results/stage7_hardware_purity_ibm.md),
+[results/review_hardware.md](results/review_hardware.md).
 
 ### Stage 6: a toy lattice gauge theory (not Yang–Mills)
 
@@ -319,6 +472,38 @@ Each cell reads ideal → device → device recalibrated. See
   the pipeline works end to end on hardware, and that quantum and classical
   models degrade similarly. They are too small to rank the models.
 
+**Larger hardware runs (9 Nov 2026).** We ran each task twice on the same 40
+test states (balanced) plus 16 calibration states, with a fixed `seed_transpiler`
+so both runs use the same physical qubits. The 1-copy QNN was left out, since it
+is at chance by construction. Each run is 1,456 circuits in 4 jobs and costs
+37 s of quantum time:
+
+```bash
+python stage4_hardware.py --backend ibm_marrakesh --qubits-entanglement 2 --states 40 --calibrate 16 \
+    --copies 512 --skip-one-copy --tag ibm_run1 --run-label "run 1"
+```
+
+| Task | Model | Ideal | ibm_marrakesh | Recalibrated | FakeMarrakesh | FakeMarrakesh, recalibrated |
+|---|---|---|---|---|---|---|
+| Entanglement, 2 qubits | QNN 2-copy | 1.000 | 0.800 ± 0.035 | 0.988 ± 0.018 | 1.000 | 0.975 ± 0.035 |
+| Entanglement, 2 qubits | Classical snapshots (best) | 1.000 | 0.938 ± 0.018 | 0.975 ± 0.000 | 1.000 | 0.963 ± 0.053 |
+| Ising, 4 qubits | QCNN | 0.950 | 0.925 ± 0.035 | 0.925 ± 0.035 | 0.975 ± 0.035 | 0.988 ± 0.018 |
+| Ising, 4 qubits | Classical snapshots (best) | 0.975 | 0.962 ± 0.018 | 0.962 ± 0.018 | 0.975 | 0.962 ± 0.018 |
+
+Values are mean ± std over 2 runs. With 80 pooled test predictions, the Wilson
+95% interval on 0.95 is about [0.88, 0.98]. So no model ranking inside a task is
+significant. Full table with intervals, per-qubit calibration, job IDs and billed
+seconds: [results/review_hardware.md](results/review_hardware.md).
+
+- **Without recalibration the 2-copy QNN loses most** (0.80, against 0.94 for
+  classical snapshots). Its 4-qubit circuit picks up a positive output shift of
+  +0.028 and +0.032 per run, which pushes product states over the threshold.
+  Sixteen labelled device states restore it to 0.99.
+- **The fake backend understates this.** FakeMarrakesh gives the same circuit a
+  shift of only +0.009 to +0.010. For the 4-qubit QCNN, real and fake agree
+  better: −0.007 to −0.009 real, −0.005 fake.
+- **Ising behaves as in simulation:** every model scores 0.90–0.98 on the device.
+
 ## Usage
 
 Requires Python 3.11+ (developed on 3.12). Everything runs locally on CPU, and
@@ -335,6 +520,10 @@ python stage3_efficiency.py            # ~9 min  accuracy vs training states and
 python stage4_hardware.py --fake       # ~1 min  IBM device noise model, no account needed
 python stage5_purity.py                # ~35 min pure vs mixed, 2-6 qubits, copies-needed scaling
 python stage6_gauge.py                 # ~1 min  Z2 lattice gauge theory: gap, confinement, phases
+python stage7_hardware_purity.py --fake  # ~1 min pure vs mixed on the FakeMarrakesh noise model
+python review_seeds.py --stage 1       # ~2 min  5-seed uncertainty (also --stage 2, 5, 6)
+python review_gradients.py             # ~20 min gradient variance vs qubits (barren-plateau check)
+python review_hardware.py              # summary of every hardware run, real vs fake
 python -m pytest -q tests              # correctness checks
 ./security/audit_deps.sh               # pip-audit scan -> results/dependency_audit.md
 ```
@@ -360,13 +549,21 @@ python stage4_hardware.py                              # least busy device; asks
 python stage4_hardware.py --backend ibm_torino --states 10 --copies 512 --task entanglement
 ```
 
-Results go to `results/stage4_hardware_ibm.*`. The full default run is about
+Results go to `results/stage4_hardware_ibm.*` (or `--tag`). The full default run is about
 1,720 circuits; the small run above is 280.
+
+Before every real-device job the scripts read the account's remaining quantum time
+(`QiskitRuntimeService().usage()`) and refuse to submit if the job's estimated cost
+(about 0.26 ms per shot plus 3 s per job, measured on `ibm_marrakesh`) would leave
+less than `--floor` seconds (default 125), or take the run past `--cap` (default 170).
+Every billed job is logged to `results/ibm_jobs.json` with its ID, time and quantum
+seconds.
 
 ## Repo layout
 
 ```
-stage1_entanglement.py ... stage6_gauge.py    one CLI per stage
+stage1_entanglement.py ... stage7_hardware_purity.py    one CLI per stage
+review_seeds.py, review_gradients.py, review_hardware.py  robustness checks (uncertainty, gradients, hardware)
 docs/YANG_MILLS.md       the Millennium problem: statement, known results, what stage 6 does not show
 entangle/
   states.py      product/entangled states, Meyer-Wallach Q, concurrence, Ising ground states, pure/mixed states
@@ -376,6 +573,7 @@ entangle/
   measure.py     Pauli snapshots, feature estimates, shadow global-purity estimator, measurement circuits
   classical.py   logistic regression / RBF SVM / MLP baselines
   gauge.py       Z2 lattice gauge theory: lattice, Wegner-dual solver, Wilson loops, link-qubit states
+  ibm.py         IBM Runtime access: credentials, quantum-time budget guard, job log, calibration snapshots
   report.py      JSON, Markdown and chart output
 tests/           simulator vs full unitary, adjoint vs parameter shift, vs SamplerQNN, physics checks
 security/        pip-audit dependency scan
@@ -390,8 +588,8 @@ results/         JSON, Markdown tables and charts for every stage, dependency au
   theory, but it is not a proof of scaling, which the cited papers provide.
 - **Stage 5 states are Haar-random,** chosen because the theory is cleanest for
   them. Preparing Haar-random states needs circuits whose depth grows
-  exponentially, so stage 5 is simulation only. A hardware version would use
-  shallow random circuits (approximate designs) instead.
+  exponentially, so only the 2-qubit case has run on hardware (stage 7). A larger
+  hardware version would use shallow random circuits (approximate designs).
 - **The two-copy model is physics-informed.** Its pairwise blocks and its
   readouts ("any pair reads 11", "an odd number of pairs read 11") are designed
   so that the SWAP test is expressible. Training finds it, with weight sharing or
@@ -410,9 +608,16 @@ results/         JSON, Markdown tables and charts for every stage, dependency au
   qubits so the circuits stay shallow.
 - **Qiskit is pinned below 2**, as in AGI. `SamplerQNN`'s exact reference
   `Sampler` (used in the tests) is removed in Qiskit 2.
-- **Stage 4 numbers are small-sample**: 20 test states on the fake backend and
-  10 on real hardware. Only the smallest configuration (2-qubit entanglement,
-  4-qubit Ising) has been run on a real device.
+- **Hardware numbers are small-sample.** Stage 4 has 40 test states × 2 runs per
+  task, and stage 7 has 60 × 2. With these sizes, accuracy differences under
+  about 0.05 are not significant (Wilson intervals in
+  [results/review_hardware.md](results/review_hardware.md)). Only small sizes
+  have run on a real device: 2-qubit entanglement and purity, and the 4-qubit
+  Ising chain. Two runs give one estimate of run-to-run spread, not a
+  distribution.
+- **Seed uncertainty.** Stages 1, 2 and 6 report one seed in their own tables.
+  [review_seeds.py](review_seeds.py) reruns them over 5 seeds (results in
+  `results/review_seeds_stage*.md`), and the stds there are small, at most 0.04.
 
 ## License
 

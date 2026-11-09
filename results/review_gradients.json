@@ -1,0 +1,343 @@
+{
+  "settings": {
+    "qubits": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "draws": 100,
+    "states": 16,
+    "seeds": 3
+  },
+  "per_seed": {
+    "per-pair blocks": {
+      "2": [
+        {
+          "weights": 16,
+          "grad_var_mean": 0.0009141674823858288,
+          "grad_var_first": 0.0016041054110783922,
+          "signal_var": 0.003775604952519119,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.11794638317154861
+        },
+        {
+          "weights": 16,
+          "grad_var_mean": 0.0008471663728456852,
+          "grad_var_first": 0.0006547509276376678,
+          "signal_var": 0.003321195464725233,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.11017853179629494
+        },
+        {
+          "weights": 16,
+          "grad_var_mean": 0.001095220312656302,
+          "grad_var_first": 0.0013700694969975575,
+          "signal_var": 0.003288752248751955,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.12102042365831103
+        }
+      ],
+      "3": [
+        {
+          "weights": 24,
+          "grad_var_mean": 0.0002523499569041656,
+          "grad_var_first": 0.0003331650885297489,
+          "signal_var": 0.00104701186049481,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.0761337939981141
+        },
+        {
+          "weights": 24,
+          "grad_var_mean": 0.0002480159145710223,
+          "grad_var_first": 0.0004422357222110208,
+          "signal_var": 0.0008662776675514092,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.07322451649820896
+        },
+        {
+          "weights": 24,
+          "grad_var_mean": 0.0002545788886709051,
+          "grad_var_first": 0.00035711991742475724,
+          "signal_var": 0.0009774461152371003,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.07530145791959164
+        }
+      ],
+      "4": [
+        {
+          "weights": 32,
+          "grad_var_mean": 6.345720710504438e-05,
+          "grad_var_first": 7.425310800412429e-05,
+          "signal_var": 0.00021698973954985907,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.043873397549695686
+        },
+        {
+          "weights": 32,
+          "grad_var_mean": 6.283780327986649e-05,
+          "grad_var_first": 0.00010841219394328441,
+          "signal_var": 0.00029650847290561605,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.04291144830586685
+        },
+        {
+          "weights": 32,
+          "grad_var_mean": 7.02301780462962e-05,
+          "grad_var_first": 8.297479409702121e-05,
+          "signal_var": 0.00028905263694526095,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.0459920333116514
+        }
+      ],
+      "5": [
+        {
+          "weights": 40,
+          "grad_var_mean": 1.735304730277223e-05,
+          "grad_var_first": 2.7748702420370064e-05,
+          "signal_var": 6.742661908561204e-05,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.026007762348541467
+        },
+        {
+          "weights": 40,
+          "grad_var_mean": 1.802893154998024e-05,
+          "grad_var_first": 2.3309055371953957e-05,
+          "signal_var": 7.881108991682595e-05,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.026208316071469805
+        },
+        {
+          "weights": 40,
+          "grad_var_mean": 1.6446993586384315e-05,
+          "grad_var_first": 2.4625459030696438e-05,
+          "signal_var": 7.924143287335304e-05,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.025128286792437286
+        }
+      ],
+      "6": [
+        {
+          "weights": 48,
+          "grad_var_mean": 4.202909798580343e-06,
+          "grad_var_first": 5.0092674989774295e-06,
+          "signal_var": 2.0917364399666495e-05,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.013919130403495218
+        },
+        {
+          "weights": 48,
+          "grad_var_mean": 4.0472173717868805e-06,
+          "grad_var_first": 4.813271757227978e-06,
+          "signal_var": 2.0453250346142473e-05,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.013920219437785085
+        },
+        {
+          "weights": 48,
+          "grad_var_mean": 4.231199832179136e-06,
+          "grad_var_first": 5.448771034043494e-06,
+          "signal_var": 1.9314787583226072e-05,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.01405273178143357
+        }
+      ],
+      "7": [
+        {
+          "weights": 56,
+          "grad_var_mean": 1.0740254420871444e-06,
+          "grad_var_first": 1.4850975280578705e-06,
+          "signal_var": 5.1333696939430025e-06,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.00756254035634632
+        },
+        {
+          "weights": 56,
+          "grad_var_mean": 1.0576375314257759e-06,
+          "grad_var_first": 1.914080630787281e-06,
+          "signal_var": 2.903978896356013e-06,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.007731294865640862
+        },
+        {
+          "weights": 56,
+          "grad_var_mean": 1.0007741286076904e-06,
+          "grad_var_first": 1.3639226748624973e-06,
+          "signal_var": 4.417671466929688e-06,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.007259237229234602
+        }
+      ]
+    },
+    "shared block": {
+      "2": [
+        {
+          "weights": 8,
+          "grad_var_mean": 0.0027684591385006797,
+          "grad_var_first": 0.0025842617266746237,
+          "signal_var": 0.005652139467641425,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.13882864964312827
+        },
+        {
+          "weights": 8,
+          "grad_var_mean": 0.0023497687435030624,
+          "grad_var_first": 0.0030137866794705827,
+          "signal_var": 0.005487876448897708,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.12295495255460671
+        },
+        {
+          "weights": 8,
+          "grad_var_mean": 0.0026909682808146677,
+          "grad_var_first": 0.003689184482966495,
+          "signal_var": 0.004802244944930731,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.13765323718784223
+        }
+      ],
+      "3": [
+        {
+          "weights": 8,
+          "grad_var_mean": 0.001122015269580862,
+          "grad_var_first": 0.0017502716330949878,
+          "signal_var": 0.0016827423437198894,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.0800981021126241
+        },
+        {
+          "weights": 8,
+          "grad_var_mean": 0.0012350449218619408,
+          "grad_var_first": 0.0022755409126518004,
+          "signal_var": 0.0014825409965882178,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.07857279047156357
+        },
+        {
+          "weights": 8,
+          "grad_var_mean": 0.0011743031291728966,
+          "grad_var_first": 0.001758174951840435,
+          "signal_var": 0.0013273274262434194,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.08101020890293184
+        }
+      ],
+      "4": [
+        {
+          "weights": 8,
+          "grad_var_mean": 0.0005193929978632851,
+          "grad_var_first": 0.0007377534858478878,
+          "signal_var": 0.0004545951956261212,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.05077806040087249
+        },
+        {
+          "weights": 8,
+          "grad_var_mean": 0.0006459143634652225,
+          "grad_var_first": 0.0008281108188085178,
+          "signal_var": 0.0006658292488798406,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.05346795131466325
+        },
+        {
+          "weights": 8,
+          "grad_var_mean": 0.0005096251960288305,
+          "grad_var_first": 0.00048255801448724654,
+          "signal_var": 0.0005706824237272149,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.04892438307442459
+        }
+      ],
+      "5": [
+        {
+          "weights": 8,
+          "grad_var_mean": 0.00043318989127556583,
+          "grad_var_first": 0.0003743548230140952,
+          "signal_var": 0.00020362242394440954,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.031765111864185805
+        },
+        {
+          "weights": 8,
+          "grad_var_mean": 0.0003164236636824063,
+          "grad_var_first": 0.00034709774529789636,
+          "signal_var": 0.00023337781065136377,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.02468856530863315
+        },
+        {
+          "weights": 8,
+          "grad_var_mean": 0.00029721539607173734,
+          "grad_var_first": 0.0007068246917081464,
+          "signal_var": 0.00012814067583670553,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.028312047960165496
+        }
+      ],
+      "6": [
+        {
+          "weights": 8,
+          "grad_var_mean": 0.0002344732161046799,
+          "grad_var_first": 0.000289648595748676,
+          "signal_var": 0.00015951854473471148,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.01781482246086198
+        },
+        {
+          "weights": 8,
+          "grad_var_mean": 0.0003263414628925205,
+          "grad_var_first": 0.00022841542295214752,
+          "signal_var": 0.00023320295401478555,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.01500630776772469
+        },
+        {
+          "weights": 8,
+          "grad_var_mean": 0.00010694771626194155,
+          "grad_var_first": 0.00017660733396737148,
+          "signal_var": 3.449957635315794e-05,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.013358882402366604
+        }
+      ],
+      "7": [
+        {
+          "weights": 8,
+          "grad_var_mean": 4.511089474863626e-05,
+          "grad_var_first": 7.041667025907303e-05,
+          "signal_var": 1.695944085130234e-05,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.007989630089724037
+        },
+        {
+          "weights": 8,
+          "grad_var_mean": 0.00015290442732336702,
+          "grad_var_first": 0.0003936017673120853,
+          "signal_var": 6.403474679727471e-05,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.00832329498497383
+        },
+        {
+          "weights": 8,
+          "grad_var_mean": 0.00027529704518196557,
+          "grad_var_first": 0.0006197653673097451,
+          "signal_var": 0.00011416927308518658,
+          "frac_small_grad": 0.0,
+          "median_grad_norm": 0.009161600608588212
+        }
+      ]
+    }
+  },
+  "summary": {
+    "per-pair blocks": {
+      "log2_slope_per_qubit": -1.9669240070680778,
+      "decay_factor_per_qubit": 3.9093371386752565
+    },
+    "shared block": {
+      "log2_slope_per_qubit": -0.8030880122135671,
+      "decay_factor_per_qubit": 1.7448318524907047
+    }
+  }
+}
