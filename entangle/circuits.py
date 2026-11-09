@@ -140,25 +140,32 @@ def two_copy_model(n):
 
 
 def _conv(b, w, a, c):
-    """Two-qubit convolution unit (3 shared weights), as in the Qiskit QCNN tutorial."""
-    b.qc.rz(-np.pi / 2, c)
-    b.qc.cx(c, a)
-    b.qc.rz(b.p(w[0]), a)
-    b.qc.ry(b.p(w[1]), c)
+    """Two-qubit convolution unit (8 shared weights): RY RZ on both, CX, RY RZ on both.
+
+    (The 3-parameter unit from the Qiskit QCNN tutorial was tried first: on the
+    Ising ground states, which are symmetric under flipping every spin, its output
+    was exactly 0.5 for every input at every weight setting we tried, so it could not learn.)
+    """
+    for q, k in ((a, 0), (c, 2)):
+        b.qc.ry(b.p(w[k]), q)
+        b.qc.rz(b.p(w[k + 1]), q)
     b.qc.cx(a, c)
-    b.qc.ry(b.p(w[2]), c)
-    b.qc.cx(c, a)
-    b.qc.rz(np.pi / 2, a)
+    for q, k in ((a, 4), (c, 6)):
+        b.qc.ry(b.p(w[k]), q)
+        b.qc.rz(b.p(w[k + 1]), q)
 
 
 def _pool(b, w, source, sink):
-    """Pooling unit: entangle `source` into `sink`, then `source` is discarded."""
-    b.qc.rz(-np.pi / 2, sink)
-    b.qc.cx(sink, source)
-    b.qc.rz(b.p(w[0]), source)
-    b.qc.ry(b.p(w[1]), sink)
+    """Pooling unit (4 shared weights): rotate `source`, CX source -> sink, rotate `sink`.
+
+    Coherent version of "measure the source, rotate the sink depending on the
+    result"; the source qubit is not used again.
+    """
+    b.qc.ry(b.p(w[0]), source)
+    b.qc.rz(b.p(w[1]), source)
     b.qc.cx(source, sink)
     b.qc.ry(b.p(w[2]), sink)
+    b.qc.rz(b.p(w[3]), sink)
 
 
 def qcnn_model(n):
@@ -172,7 +179,7 @@ def qcnn_model(n):
     b = _Builder(n)
     active = list(range(n))
     while len(active) > 1:
-        wc = b.new_weights(3)
+        wc = b.new_weights(8)
         k = len(active)
         pairs = [(active[i], active[i + 1]) for i in range(0, k - 1, 2)]
         pairs += [(active[i], active[i + 1]) for i in range(1, k - 1, 2)]
@@ -180,7 +187,7 @@ def qcnn_model(n):
             pairs.append((active[-1], active[0]))  # close the ring
         for a, c in pairs:
             _conv(b, wc, a, c)
-        wp = b.new_weights(3)
+        wp = b.new_weights(4)
         keep = []
         for i in range(0, k - 1, 2):
             _pool(b, wp, active[i], active[i + 1])
