@@ -90,3 +90,29 @@ def test_qcnn_output_depends_on_ising_state():
     clf = QuantumClassifier(qcnn_model(4))
     p = clf.raw_proba(d.states, np.random.default_rng(0).uniform(-3, 3, clf.model.num_weights))
     assert np.ptp(p) > 1e-3
+
+
+def test_hardware_count_parsing_matches_simulated_snapshots():
+    """Counts from a real sampler (Aer, noiseless) give the same features as our own snapshots."""
+    from qiskit_aer import AerSimulator
+    from qiskit_ibm_runtime import SamplerV2
+    from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
+    from entangle.measure import (Z, X, exact_features, ising_paulis, measurement_circuit,
+                                  shadow_features, snapshots_from_counts)
+    qc = QuantumCircuit(3)
+    qc.x(0)
+    qc.h(2)                               # |+> on qubit 2, |0> on qubit 1, |1> on qubit 0
+    settings = [[Z, Z, Z], [X, X, X]]
+    backend = AerSimulator()
+    pm = generate_preset_pass_manager(backend=backend, optimization_level=1)
+    circuits = pm.run([measurement_circuit(qc, s) for s in settings])
+    counts = [r.data.meas.get_counts() for r in SamplerV2(mode=backend).run(circuits, shots=200).result()]
+    feats = shadow_features([snapshots_from_counts(list(zip(settings, counts)), 3)], 3, ising_paulis(3),
+                            purities=False)
+    from qiskit.quantum_info import Statevector
+    exact = exact_features([Statevector(qc).data], 3, ising_paulis(3), purities=False)
+    # single-qubit terms that are +-1 exactly: <Z_0> = -1, <Z_1> = +1, <X_2> = +1
+    paulis = ising_paulis(3)
+    for term in (((0, Z),), ((1, Z),), ((2, X),)):
+        k = paulis.index(term)
+        assert feats[0, k] == pytest.approx(exact[0, k])
