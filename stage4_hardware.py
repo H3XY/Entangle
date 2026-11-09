@@ -88,7 +88,12 @@ def run_circuits(backend, circuits, shots, seed=None):
     """Transpile for the backend and run with SamplerV2; returns counts per circuit."""
     from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
     from qiskit_ibm_runtime import SamplerV2
-    pm = generate_preset_pass_manager(backend=backend, optimization_level=1, seed_transpiler=seed)
+    # translation_method="translator": Qiskit's standard basis translation. Real IBM backends
+    # otherwise ask for qiskit-ibm-runtime's own plugin (e.g. "ibm_dynamic_circuits"), which
+    # fails to import against Qiskit 1.x. Our circuits use no dynamic or fractional gates,
+    # so the standard translation is all they need.
+    pm = generate_preset_pass_manager(backend=backend, optimization_level=1, seed_transpiler=seed,
+                                      translation_method="translator")
     isa = pm.run(circuits)
     sampler = SamplerV2(mode=backend)
     if seed is not None and hasattr(backend, "refresh"):  # fake backends: reproducible noise sampling
