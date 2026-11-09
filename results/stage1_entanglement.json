@@ -1,0 +1,216 @@
+{
+  "settings": {
+    "qubits": [
+      2,
+      3,
+      4
+    ],
+    "train": 200,
+    "test": 400,
+    "copies": 256,
+    "q_min": 0.2,
+    "maxiter": 200,
+    "restarts": 3,
+    "seed": 0
+  },
+  "results": [
+    {
+      "qubits": 2,
+      "train_states": 200,
+      "test_states": 400,
+      "copies_per_prediction": 256,
+      "quantum": {
+        "QNN 1-copy": {
+          "qubits_used": 2,
+          "weights": 16,
+          "train_accuracy": 0.585,
+          "test_accuracy_exact": 0.4925,
+          "test_accuracy_shots": 0.495,
+          "shots": 256,
+          "train_seconds": 0.1,
+          "description": "2 qubits, 3-layer RY/RZ+CX ansatz, read out qubit 0"
+        },
+        "QNN 2-copy": {
+          "qubits_used": 4,
+          "weights": 16,
+          "train_accuracy": 1.0,
+          "test_accuracy_exact": 1.0,
+          "test_accuracy_shots": 0.9975,
+          "shots": 128,
+          "train_seconds": 0.7,
+          "description": "4 qubits (2 copies), trainable block per qubit pair, class 1 if any pair reads 11"
+        }
+      },
+      "classical": {
+        "full state vector": {
+          "features": 8,
+          "test_accuracy_exact": {
+            "Logistic regression": 0.46,
+            "SVM (RBF)": 0.685,
+            "MLP": 0.6475
+          }
+        },
+        "snapshots": {
+          "features": 17,
+          "snapshots": 256,
+          "test_accuracy_exact": {
+            "Logistic regression": 1.0,
+            "SVM (RBF)": 0.9975,
+            "MLP": 0.9875
+          },
+          "test_accuracy_shots": {
+            "Logistic regression": 0.945,
+            "SVM (RBF)": 0.92,
+            "MLP": 0.9175
+          }
+        },
+        "snapshots, purities only": {
+          "features": 2,
+          "snapshots": 256,
+          "test_accuracy_exact": {
+            "Logistic regression": 1.0,
+            "SVM (RBF)": 1.0,
+            "MLP": 1.0
+          },
+          "test_accuracy_shots": {
+            "Logistic regression": 0.9375,
+            "SVM (RBF)": 0.94,
+            "MLP": 0.94
+          }
+        }
+      }
+    },
+    {
+      "qubits": 3,
+      "train_states": 200,
+      "test_states": 400,
+      "copies_per_prediction": 256,
+      "quantum": {
+        "QNN 1-copy": {
+          "qubits_used": 3,
+          "weights": 24,
+          "train_accuracy": 0.68,
+          "test_accuracy_exact": 0.5,
+          "test_accuracy_shots": 0.485,
+          "shots": 256,
+          "train_seconds": 0.5,
+          "description": "3 qubits, 3-layer RY/RZ+CX ansatz, read out qubit 0"
+        },
+        "QNN 2-copy": {
+          "qubits_used": 6,
+          "weights": 24,
+          "train_accuracy": 1.0,
+          "test_accuracy_exact": 1.0,
+          "test_accuracy_shots": 0.995,
+          "shots": 128,
+          "train_seconds": 1.7,
+          "description": "6 qubits (2 copies), trainable block per qubit pair, class 1 if any pair reads 11"
+        }
+      },
+      "classical": {
+        "full state vector": {
+          "features": 16,
+          "test_accuracy_exact": {
+            "Logistic regression": 0.5475,
+            "SVM (RBF)": 0.5525,
+            "MLP": 0.525
+          }
+        },
+        "snapshots": {
+          "features": 66,
+          "snapshots": 256,
+          "test_accuracy_exact": {
+            "Logistic regression": 0.9825,
+            "SVM (RBF)": 0.985,
+            "MLP": 0.9125
+          },
+          "test_accuracy_shots": {
+            "Logistic regression": 0.93,
+            "SVM (RBF)": 0.925,
+            "MLP": 0.875
+          }
+        },
+        "snapshots, purities only": {
+          "features": 3,
+          "snapshots": 256,
+          "test_accuracy_exact": {
+            "Logistic regression": 1.0,
+            "SVM (RBF)": 1.0,
+            "MLP": 1.0
+          },
+          "test_accuracy_shots": {
+            "Logistic regression": 0.97,
+            "SVM (RBF)": 0.965,
+            "MLP": 0.97
+          }
+        }
+      }
+    },
+    {
+      "qubits": 4,
+      "train_states": 200,
+      "test_states": 400,
+      "copies_per_prediction": 256,
+      "quantum": {
+        "QNN 1-copy": {
+          "qubits_used": 4,
+          "weights": 32,
+          "train_accuracy": 0.705,
+          "test_accuracy_exact": 0.505,
+          "test_accuracy_shots": 0.4925,
+          "shots": 256,
+          "train_seconds": 1.2,
+          "description": "4 qubits, 3-layer RY/RZ+CX ansatz, read out qubit 0"
+        },
+        "QNN 2-copy": {
+          "qubits_used": 8,
+          "weights": 32,
+          "train_accuracy": 1.0,
+          "test_accuracy_exact": 1.0,
+          "test_accuracy_shots": 1.0,
+          "shots": 128,
+          "train_seconds": 5.3,
+          "description": "8 qubits (2 copies), trainable block per qubit pair, class 1 if any pair reads 11"
+        }
+      },
+      "classical": {
+        "full state vector": {
+          "features": 32,
+          "test_accuracy_exact": {
+            "Logistic regression": 0.4925,
+            "SVM (RBF)": 0.525,
+            "MLP": 0.535
+          }
+        },
+        "snapshots": {
+          "features": 259,
+          "snapshots": 256,
+          "test_accuracy_exact": {
+            "Logistic regression": 0.92,
+            "SVM (RBF)": 0.9575,
+            "MLP": 0.7075
+          },
+          "test_accuracy_shots": {
+            "Logistic regression": 0.875,
+            "SVM (RBF)": 0.885,
+            "MLP": 0.64
+          }
+        },
+        "snapshots, purities only": {
+          "features": 4,
+          "snapshots": 256,
+          "test_accuracy_exact": {
+            "Logistic regression": 1.0,
+            "SVM (RBF)": 1.0,
+            "MLP": 1.0
+          },
+          "test_accuracy_shots": {
+            "Logistic regression": 0.9875,
+            "SVM (RBF)": 0.9875,
+            "MLP": 0.985
+          }
+        }
+      }
+    }
+  ]
+}

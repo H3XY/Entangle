@@ -1,0 +1,263 @@
+{
+  "settings": {
+    "qubits": [
+      4,
+      6,
+      8
+    ],
+    "train": 200,
+    "test": 400,
+    "copies": 256,
+    "maxiter": 200,
+    "restarts": 3,
+    "seed": 0
+  },
+  "results": [
+    {
+      "qubits": 4,
+      "quantum": {
+        "QCNN": {
+          "weights": 24,
+          "exact": {
+            "all": 0.9975,
+            "away_from_critical": 1.0
+          },
+          "shots": {
+            "all": 0.9675,
+            "away_from_critical": 1.0
+          },
+          "train_seconds": 2.9,
+          "description": "4-qubit QCNN, 24 shared weights, read out qubit 3"
+        },
+        "QNN (generic ansatz)": {
+          "weights": 32,
+          "exact": {
+            "all": 1.0,
+            "away_from_critical": 1.0
+          },
+          "shots": {
+            "all": 0.965,
+            "away_from_critical": 1.0
+          },
+          "train_seconds": 1.9,
+          "description": "4 qubits, 3-layer RY/RZ+CX ansatz, read out qubit 0"
+        }
+      },
+      "classical": {
+        "full state vector": {
+          "features": 32,
+          "exact": {
+            "Logistic regression": {
+              "all": 0.9925,
+              "away_from_critical": 1.0
+            },
+            "SVM (RBF)": {
+              "all": 0.9875,
+              "away_from_critical": 1.0
+            },
+            "MLP": {
+              "all": 1.0,
+              "away_from_critical": 1.0
+            }
+          }
+        },
+        "Z/X snapshots": {
+          "features": 20,
+          "snapshots": 256,
+          "exact": {
+            "Logistic regression": {
+              "all": 0.9875,
+              "away_from_critical": 1.0
+            },
+            "SVM (RBF)": {
+              "all": 0.975,
+              "away_from_critical": 0.9938080495356038
+            },
+            "MLP": {
+              "all": 0.98,
+              "away_from_critical": 1.0
+            }
+          },
+          "shots": {
+            "Logistic regression": {
+              "all": 0.98,
+              "away_from_critical": 1.0
+            },
+            "SVM (RBF)": {
+              "all": 0.9625,
+              "away_from_critical": 0.9969040247678018
+            },
+            "MLP": {
+              "all": 0.965,
+              "away_from_critical": 0.9876160990712074
+            }
+          }
+        }
+      }
+    },
+    {
+      "qubits": 6,
+      "quantum": {
+        "QCNN": {
+          "weights": 36,
+          "exact": {
+            "all": 1.0,
+            "away_from_critical": 1.0
+          },
+          "shots": {
+            "all": 0.985,
+            "away_from_critical": 1.0
+          },
+          "train_seconds": 9.4,
+          "description": "6-qubit QCNN, 36 shared weights, read out qubit 5"
+        },
+        "QNN (generic ansatz)": {
+          "weights": 48,
+          "exact": {
+            "all": 1.0,
+            "away_from_critical": 1.0
+          },
+          "shots": {
+            "all": 0.975,
+            "away_from_critical": 1.0
+          },
+          "train_seconds": 5.6,
+          "description": "6 qubits, 3-layer RY/RZ+CX ansatz, read out qubit 0"
+        }
+      },
+      "classical": {
+        "full state vector": {
+          "features": 128,
+          "exact": {
+            "Logistic regression": {
+              "all": 1.0,
+              "away_from_critical": 1.0
+            },
+            "SVM (RBF)": {
+              "all": 1.0,
+              "away_from_critical": 1.0
+            },
+            "MLP": {
+              "all": 1.0,
+              "away_from_critical": 1.0
+            }
+          }
+        },
+        "Z/X snapshots": {
+          "features": 42,
+          "snapshots": 256,
+          "exact": {
+            "Logistic regression": {
+              "all": 0.9925,
+              "away_from_critical": 1.0
+            },
+            "SVM (RBF)": {
+              "all": 0.9925,
+              "away_from_critical": 1.0
+            },
+            "MLP": {
+              "all": 0.99,
+              "away_from_critical": 1.0
+            }
+          },
+          "shots": {
+            "Logistic regression": {
+              "all": 0.99,
+              "away_from_critical": 1.0
+            },
+            "SVM (RBF)": {
+              "all": 0.98,
+              "away_from_critical": 1.0
+            },
+            "MLP": {
+              "all": 0.98,
+              "away_from_critical": 1.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "qubits": 8,
+      "quantum": {
+        "QCNN": {
+          "weights": 36,
+          "exact": {
+            "all": 0.9925,
+            "away_from_critical": 1.0
+          },
+          "shots": {
+            "all": 0.98,
+            "away_from_critical": 1.0
+          },
+          "train_seconds": 38.8,
+          "description": "8-qubit QCNN, 36 shared weights, read out qubit 7"
+        },
+        "QNN (generic ansatz)": {
+          "weights": 64,
+          "exact": {
+            "all": 0.9925,
+            "away_from_critical": 1.0
+          },
+          "shots": {
+            "all": 0.9775,
+            "away_from_critical": 1.0
+          },
+          "train_seconds": 26.3,
+          "description": "8 qubits, 3-layer RY/RZ+CX ansatz, read out qubit 0"
+        }
+      },
+      "classical": {
+        "full state vector": {
+          "features": 512,
+          "exact": {
+            "Logistic regression": {
+              "all": 0.99,
+              "away_from_critical": 1.0
+            },
+            "SVM (RBF)": {
+              "all": 0.985,
+              "away_from_critical": 1.0
+            },
+            "MLP": {
+              "all": 0.995,
+              "away_from_critical": 1.0
+            }
+          }
+        },
+        "Z/X snapshots": {
+          "features": 72,
+          "snapshots": 256,
+          "exact": {
+            "Logistic regression": {
+              "all": 0.995,
+              "away_from_critical": 1.0
+            },
+            "SVM (RBF)": {
+              "all": 0.99,
+              "away_from_critical": 1.0
+            },
+            "MLP": {
+              "all": 0.985,
+              "away_from_critical": 1.0
+            }
+          },
+          "shots": {
+            "Logistic regression": {
+              "all": 0.98,
+              "away_from_critical": 1.0
+            },
+            "SVM (RBF)": {
+              "all": 0.975,
+              "away_from_critical": 1.0
+            },
+            "MLP": {
+              "all": 0.9575,
+              "away_from_critical": 0.9969230769230769
+            }
+          }
+        }
+      }
+    }
+  ]
+}
