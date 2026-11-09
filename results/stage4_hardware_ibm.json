@@ -1,0 +1,183 @@
+{
+  "settings": {
+    "fake": false,
+    "backend_fake": "FakeTorino",
+    "backend": null,
+    "task": "both",
+    "qubits_entanglement": [
+      2
+    ],
+    "qubits_phases": 4,
+    "states": 10,
+    "copies": 512,
+    "calibrate": 10,
+    "train": 200,
+    "maxiter": 200,
+    "restarts": 3,
+    "seed": 0,
+    "yes": false
+  },
+  "backend": "ibm_marrakesh",
+  "results": [
+    {
+      "task": "entanglement, 2 qubits",
+      "qubits": 2,
+      "test_states": 10,
+      "copies": 512,
+      "models": {
+        "QNN 1-copy": {
+          "kind": "quantum",
+          "qubits_used": 2,
+          "shots": 512,
+          "ideal": 0.5,
+          "device": 0.5,
+          "p_device": [
+            0.53125,
+            0.2421875,
+            0.5546875,
+            0.611328125,
+            0.66796875,
+            0.603515625,
+            0.34375,
+            0.609375,
+            0.88671875,
+            0.638671875
+          ],
+          "p_ideal_exact": [
+            0.5465385812644439,
+            0.23462442000142503,
+            0.5748061259428463,
+            0.6340001179397298,
+            0.661755345518774,
+            0.6357834110595173,
+            0.31055981360488694,
+            0.6163458272390441,
+            0.8924745220040988,
+            0.6187252357749806
+          ],
+          "device_recalibrated": 0.5
+        },
+        "QNN 2-copy": {
+          "kind": "quantum",
+          "qubits_used": 4,
+          "shots": 256,
+          "ideal": 1.0,
+          "device": 0.9,
+          "p_device": [
+            0.01953125,
+            0.01953125,
+            0.16015625,
+            0.03515625,
+            0.2421875,
+            0.03125,
+            0.1171875,
+            0.1640625,
+            0.015625,
+            0.14453125
+          ],
+          "p_ideal_exact": [
+            0.0034805563844091465,
+            0.0028386089270418997,
+            0.15200914057588868,
+            0.006562489755194222,
+            0.22522970744579476,
+            0.002372261320658519,
+            0.0785913404036636,
+            0.18378057618545815,
+            0.0027845872542993345,
+            0.1353136145925122
+          ],
+          "device_recalibrated": 1.0
+        },
+        "Logistic regression (snapshots)": {
+          "kind": "classical",
+          "shots": 504,
+          "settings": 9,
+          "ideal": 1.0,
+          "device": 0.9,
+          "device_recalibrated": 1.0
+        },
+        "SVM (RBF) (snapshots)": {
+          "kind": "classical",
+          "shots": 504,
+          "settings": 9,
+          "ideal": 1.0,
+          "device": 0.9,
+          "device_recalibrated": 1.0
+        },
+        "MLP (snapshots)": {
+          "kind": "classical",
+          "shots": 504,
+          "settings": 9,
+          "ideal": 1.0,
+          "device": 0.9,
+          "device_recalibrated": 1.0
+        }
+      }
+    },
+    {
+      "task": "Ising phases, 4 qubits",
+      "qubits": 4,
+      "test_states": 10,
+      "copies": 512,
+      "models": {
+        "QCNN": {
+          "kind": "quantum",
+          "qubits_used": 4,
+          "shots": 512,
+          "ideal": 0.9,
+          "device": 1.0,
+          "p_device": [
+            0.427734375,
+            0.310546875,
+            0.78125,
+            0.333984375,
+            0.599609375,
+            0.517578125,
+            0.353515625,
+            0.509765625,
+            0.423828125,
+            0.826171875
+          ],
+          "p_ideal_exact": [
+            0.44069494164006484,
+            0.2880638653950577,
+            0.856894249841051,
+            0.2883679078194909,
+            0.6400001072547563,
+            0.5122405966333732,
+            0.31230823915700945,
+            0.5260150436920685,
+            0.41678453309007124,
+            0.9246708131807301
+          ],
+          "device_recalibrated": 0.9
+        },
+        "Logistic regression (snapshots)": {
+          "kind": "classical",
+          "shots": 512,
+          "settings": 2,
+          "ideal": 1.0,
+          "device": 1.0,
+          "device_recalibrated": 0.9
+        },
+        "SVM (RBF) (snapshots)": {
+          "kind": "classical",
+          "shots": 512,
+          "settings": 2,
+          "ideal": 1.0,
+          "device": 1.0,
+          "device_recalibrated": 0.9
+        },
+        "MLP (snapshots)": {
+          "kind": "classical",
+          "shots": 512,
+          "settings": 2,
+          "ideal": 1.0,
+          "device": 1.0,
+          "device_recalibrated": 0.8
+        }
+      }
+    }
+  ]
+}

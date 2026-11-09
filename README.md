@@ -20,7 +20,8 @@ the same number of random-Pauli measurement snapshots with purity features, is
 close behind: 0.94–0.99 against the QNN's 0.995–1.000. On Ising phases everything
 works (0.96–1.00) and the QCNN has no edge. On a simulated IBM device, noise breaks
 quantum and classical models alike until both are recalibrated on 20 states
-prepared on the device. **The quantum benefit we measure is real but small. It
+prepared on the device. A small run on real IBM hardware (`ibm_marrakesh`) behaved
+the same way, with milder noise. **The quantum benefit we measure is real but small. It
 comes from the two-copy measurement, not from the trainable circuit.** It shows
 up as shot efficiency: with 64 copies of each test state, the two-copy QNN
 classifies entanglement at 0.96, against 0.79 for classical shadows (stage 3).
@@ -187,8 +188,34 @@ Noise lowers measured purity exactly the way entanglement does. Twenty labelled
 device states fix both. See
 [results/stage4_hardware_fake.md](results/stage4_hardware_fake.md). With 20 test
 states, one state is 0.05 of accuracy, and reruns can differ by about that much.
-No real-hardware results are committed yet: running on IBM Quantum uses your
-account's time, so that run is yours to start (see Usage).
+**Real hardware: `ibm_marrakesh`** (156-qubit IBM Heron, open plan, 8–9 Nov 2026).
+A small run: 10 test states and 10 calibration states per task, 512 copies of
+each state per model, 280 circuits in 5 jobs:
+
+```bash
+python stage4_hardware.py --qubits-entanglement 2 --states 10 --calibrate 10 --copies 512
+```
+
+![Stage 4 on ibm_marrakesh](results/stage4_hardware_ibm.png)
+
+| Task | QNN 1-copy | QNN 2-copy / QCNN | Classical, snapshots (best) |
+|---|---|---|---|
+| Entanglement, 2 qubits | 0.50 → 0.50 → 0.50 | 1.00 → 0.90 → 1.00 | 1.00 → 0.90 → 1.00 |
+| Ising phases, 4 qubits | – | 0.90 → 1.00 → 0.90 | 1.00 → 1.00 → 0.90 |
+
+Each cell reads ideal → device → device recalibrated. See
+[results/stage4_hardware_ibm.md](results/stage4_hardware_ibm.md).
+
+- The real device was gentler than the FakeTorino noise model. Without any
+  recalibration, the 2-copy QNN and the classical snapshot models both kept
+  0.90 on entanglement, where the fake device dropped the classical models to
+  0.50.
+- Recalibrating restored entanglement to 1.00 for both. On Ising it *lowered*
+  accuracy by one or two states, because refitting on only 10 labelled states
+  can overfit.
+- With 10 test states, one state is 0.10 of accuracy. These numbers show that
+  the pipeline works end to end on hardware, and that quantum and classical
+  models degrade similarly. They are too small to rank the models.
 
 ## Usage
 
@@ -229,7 +256,8 @@ python stage4_hardware.py                              # least busy device; asks
 python stage4_hardware.py --backend ibm_torino --states 10 --copies 512 --task entanglement
 ```
 
-Results go to `results/stage4_hardware_ibm.*`.
+Results go to `results/stage4_hardware_ibm.*`. The full default run is about
+1,720 circuits; the small run above is 280.
 
 ## Repo layout
 
@@ -273,8 +301,9 @@ results/         JSON, Markdown tables and charts for every stage, dependency au
   qubits so the circuits stay shallow.
 - **Qiskit is pinned below 2**, as in AGI. `SamplerQNN`'s exact reference
   `Sampler` (used in the tests) is removed in Qiskit 2.
-- **Stage 4 numbers are small-sample** (20 test states), and no real-hardware run
-  is committed yet.
+- **Stage 4 numbers are small-sample**: 20 test states on the fake backend and
+  10 on real hardware. Only the smallest configuration (2-qubit entanglement,
+  4-qubit Ising) has been run on a real device.
 
 ## License
 
