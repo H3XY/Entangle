@@ -116,3 +116,49 @@ def test_hardware_count_parsing_matches_simulated_snapshots():
     for term in (((0, Z),), ((1, Z),), ((2, X),)):
         k = paulis.index(term)
         assert feats[0, k] == pytest.approx(exact[0, k])
+
+
+@pytest.mark.parametrize("build", [one_copy_model, two_copy_model])
+def test_mixed_state_batches_match_density_matrix(build):
+    """Purified inputs give P = Tr(M rho^(x)copies), and rank-1 purifications match pure inputs."""
+    rng = np.random.default_rng(4)
+    n, r = 2, 3
+    A = rng.normal(size=(5, 2 ** n, r)) + 1j * rng.normal(size=(5, 2 ** n, r))
+    A /= np.linalg.norm(A, axis=(1, 2), keepdims=True)
+    model = build(n)
+    clf = QuantumClassifier(model)
+    occ = rng.uniform(-3, 3, len(model.occ))
+    p = clf._p(occ, clf._inputs(A))
+    M = clf._observable(occ)
+    for k in range(5):
+        rho = A[k] @ A[k].conj().T
+        full = rho if model.copies == 1 else np.kron(rho, rho)
+        assert p[k] == pytest.approx(np.real(np.trace(M @ full)))
+    psi = A[:, :, 0] / np.linalg.norm(A[:, :, 0], axis=1, keepdims=True)
+    assert np.allclose(clf._p(occ, clf._inputs(psi)), clf._p(occ, clf._inputs(psi[:, :, None])))
+
+
+def test_fast_shadow_purity_equals_pairwise_sum_and_is_unbiased():
+    from entangle.measure import (random_pauli_snapshots, shadow_global_purity,
+                                  shadow_global_purity_pairs)
+    from entangle.states import make_purity_data
+    rng = np.random.default_rng(7)
+    d = make_purity_data(3, 30, seed=3)
+    snaps = random_pauli_snapshots(d.states, 3, 300, rng)
+    fast = np.array([shadow_global_purity(s, b) for s, b in snaps])
+    slow = np.array([shadow_global_purity_pairs(s, b) for s, b in snaps])
+    assert np.allclose(fast, slow)
+    assert abs(np.mean(fast - d.purity)) < 0.12  # ~3 standard errors for 30 states x 300 shots
+
+
+def test_two_copy_parity_readout_measures_global_purity():
+    """With every pair block set to a Bell-basis measurement, P(class 1) = (1 - Tr rho^2) / 2."""
+    from entangle.states import make_purity_data
+    d = make_purity_data(2, 10, seed=1)
+    model = two_copy_model(2, "parity", shared=True)
+    clf = QuantumClassifier(model)
+    # Bell measurement inside the block: RY(pi/2)-free first layer, CX, then H-like RY(-pi/2) on the control
+    w = np.zeros(8)
+    w[4] = -np.pi / 2
+    p = clf.raw_proba(d.states, w)
+    assert np.allclose(p, (1 - d.purity) / 2, atol=1e-9)

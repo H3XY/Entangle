@@ -226,3 +226,57 @@ def make_phase_data(n, num_states, seed=0, h_range=(0.1, 2.0), exclude=0.0):
     hs = np.array(hs)
     states = np.array([tfim_ground_state(n, h)[0] for h in hs])
     return PhaseData(n, hs, states, (hs < 1).astype(int))
+
+
+# --------------------------------------------------------------------------- #
+# Stage 5: pure vs mixed (a global property)
+# --------------------------------------------------------------------------- #
+
+
+def haar_state(dim, rng):
+    v = rng.normal(size=dim) + 1j * rng.normal(size=dim)
+    return v / np.linalg.norm(v)
+
+
+@dataclass
+class PurityData:
+    n: int
+    states: np.ndarray       # (N, 2^n, 2) purifications: rho = A A^dagger
+    purity: np.ndarray       # Tr(rho^2)
+    y: np.ndarray            # 1 = mixed, 0 = pure
+
+    def subset(self, idx):
+        return PurityData(self.n, self.states[idx], self.purity[idx], self.y[idx])
+
+
+def make_purity_data(n, num_states, seed=0, w_range=(0.3, 0.7)):
+    """Balanced: Haar-random pure states vs random rank-2 mixed states.
+
+    Mixed: rho = w |a><a| + (1 - w) |b><b| with a, b Haar-random and orthogonal and
+    w uniform in w_range, so Tr(rho^2) = w^2 + (1 - w)^2 is in [0.5, 0.58].
+    Both classes average to the maximally mixed state, and for growing n their
+    single-qubit marginals both approach maximally mixed: only a global property
+    (the purity of the whole state) separates them. Theory: any strategy that
+    measures one copy at a time needs a number of copies growing exponentially
+    with n; a two-copy SWAP test needs O(1) (Huang, Kueng & Preskill 2021;
+    Chen, Cotler, Huang & Li 2022).
+    """
+    rng = np.random.default_rng(seed)
+    dim = 2 ** n
+    labels = np.array([0, 1] * (num_states // 2) + [1] * (num_states % 2))
+    rng.shuffle(labels)
+    A = np.zeros((num_states, dim, 2), dtype=complex)
+    pur = np.empty(num_states)
+    for k, label in enumerate(labels):
+        a = haar_state(dim, rng)
+        if label == 0:
+            A[k, :, 0] = a
+            pur[k] = 1.0
+        else:
+            b = haar_state(dim, rng)
+            b -= np.vdot(a, b) * a
+            b /= np.linalg.norm(b)
+            w = rng.uniform(*w_range)
+            A[k, :, 0], A[k, :, 1] = np.sqrt(w) * a, np.sqrt(1 - w) * b
+            pur[k] = w ** 2 + (1 - w) ** 2
+    return PurityData(n, A, pur, labels)

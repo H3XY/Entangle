@@ -25,25 +25,34 @@ _ROT = {X: _H, Y: _H @ _SDG, Z: np.eye(2)}  # rotate basis -> Z before measuring
 
 def basis_probs(psi, n, setting):
     """Outcome distribution over bitstrings when qubit q is measured in basis setting[q]."""
-    t = np.asarray(psi, dtype=complex).reshape([2] * n)
+    psi = np.asarray(psi, dtype=complex)
+    r = psi.shape[1] if psi.ndim == 2 else 1       # (dim, r) purification of a mixed state
+    t = psi.reshape([2] * n + [r])
     for q, b in enumerate(setting):
         if b != Z:
             ax = n - 1 - q
             t = np.moveaxis(np.tensordot(_ROT[b], t, axes=([1], [ax])), 0, ax)
-    return np.abs(t.reshape(-1)) ** 2
+    return np.sum(np.abs(t.reshape(2 ** n, r)) ** 2, axis=1)
 
 
 def _bits(indices, n):
     return ((np.asarray(indices)[:, None] >> np.arange(n)) & 1).astype(np.int8)
 
 
-def random_pauli_snapshots(states, n, shots, rng):
-    """For each state: (settings (shots, n) in {0:X,1:Y,2:Z}, bits (shots, n))."""
+def pauli_setting_cdfs(states, n):
+    """Cumulative outcome distributions for every one of the 3^n basis settings, per state.
+
+    Computing these once lets many snapshot sets (different shot counts) be drawn cheaply."""
     all_settings = np.array(list(product(range(3), repeat=n)))
+    return all_settings, [np.cumsum(np.array([basis_probs(psi, n, s) for s in all_settings]), axis=1)
+                          for psi in states]
+
+
+def random_pauli_snapshots(states, n, shots, rng, cdfs=None):
+    """For each state: (settings (shots, n) in {0:X,1:Y,2:Z}, bits (shots, n))."""
+    all_settings, cdf_list = cdfs if cdfs is not None else pauli_setting_cdfs(states, n)
     out = []
-    for psi in states:
-        probs = np.array([basis_probs(psi, n, s) for s in all_settings])
-        cum = np.cumsum(probs, axis=1)
+    for cum in cdf_list:
         idx = rng.integers(0, len(all_settings), shots)
         u = rng.random(shots)[:, None]
         outcome = np.minimum((cum[idx] < u).sum(axis=1), 2 ** n - 1)
@@ -195,3 +204,65 @@ def measurement_circuit(prep, setting):
             qc.h(q)
     qc.measure_all()
     return qc
+
+
+# Per-qubit value of Tr(rho_i rho_j) for two single-qubit shadow snapshots
+# rho = 3 U^dag |b><b| U - I: 5 if same basis and outcome, -4 if same basis and
+# different outcome, 1/2 if different bases.
+_PAIR = np.full((6, 6), 0.5)
+for _b in range(3):
+    _PAIR[2 * _b, 2 * _b] = _PAIR[2 * _b + 1, 2 * _b + 1] = 5.0
+    _PAIR[2 * _b, 2 * _b + 1] = _PAIR[2 * _b + 1, 2 * _b] = -4.0
+
+
+def shadow_global_purity_pairs(settings, bits):
+    """Reference version of shadow_global_purity: explicit sum over snapshot pairs (slow)."""
+    codes = 2 * settings.astype(int) + bits.astype(int)          # (S, n) in 0..5
+    uniq, counts = np.unique(codes, axis=0, return_counts=True)
+    prod = np.ones((len(uniq), len(uniq)))
+    for q in range(codes.shape[1]):
+        prod *= _PAIR[uniq[:, q][:, None], uniq[:, q][None, :]]
+    S = len(codes)
+    if S < 2:
+        return 0.0
+    total = counts @ prod @ counts - np.sum(counts * np.diag(prod))
+    return float(total / (S * (S - 1)))
+
+
+# _PAIR = PHI^T PHI with PHI 4 x 6: a constant row (0.5) and one +-sqrt(4.5) row per basis.
+_PHI = np.zeros((4, 6))
+_PHI[0] = np.sqrt(0.5)
+for _b in range(3):
+    _PHI[1 + _b, 2 * _b], _PHI[1 + _b, 2 * _b + 1] = np.sqrt(4.5), -np.sqrt(4.5)
+
+
+def shadow_global_purity(settings, bits):
+    """Unbiased classical-shadow estimate of Tr(rho^2) for the whole n-qubit state.
+
+    The mean over snapshot pairs i != j of Tr(rho_i rho_j), each a product of
+    per-qubit factors (5, -4 or 1/2). Because the per-qubit factor matrix has
+    rank 4, the pair sum equals sum_k F_k^2 - S * 5^n, where F = (PHI (x)...(x) PHI)
+    applied to the histogram of snapshot outcomes: about 6^n * 4n operations
+    instead of S^2 * n. Its variance grows like 2^n / S^2 for S snapshots, which
+    is why single-copy measurements need exponentially many copies to tell pure
+    from mixed.
+    """
+    codes = 2 * settings.astype(int) + bits.astype(int)          # (S, n) in 0..5
+    S, n = codes.shape
+    if S < 2:
+        return 0.0
+    hist = np.zeros(6 ** n)
+    np.add.at(hist, codes @ (6 ** np.arange(n)), 1)
+    F = hist.reshape([6] * n)                                    # axis k = qubit n-1-k
+    for ax in range(n):
+        F = np.moveaxis(np.tensordot(_PHI, F, axes=([1], [ax])), 0, ax)
+    total = np.sum(F ** 2) - S * 5.0 ** n
+    return float(total / (S * (S - 1)))
+
+
+def purity_features(snapshots, n):
+    """[global purity estimate, single-qubit purity estimates...] from shadow snapshots."""
+    paulis = all_paulis(n, max_weight=1)
+    local = shadow_features(snapshots, n, paulis)[:, -n:]
+    glob = np.array([[shadow_global_purity(s, b)] for s, b in snapshots])
+    return np.concatenate([glob, local], axis=1)
