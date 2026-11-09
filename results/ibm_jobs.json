@@ -1,0 +1,213 @@
+[
+  {
+    "job_id": "dbp0r10qtr0c738dj0fg",
+    "backend": "ibm_marrakesh",
+    "simulator": false,
+    "label": "stage7 pilot",
+    "submitted_utc": "2026-11-09T18:14:27.847043+00:00",
+    "finished_utc": "2026-11-09T18:14:40.337600+00:00",
+    "circuits": 80,
+    "total_shots": 3040,
+    "estimated_seconds": 3.8,
+    "quantum_seconds": 3.0,
+    "seed_transpiler": 0,
+    "physical_qubits": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      17
+    ]
+  },
+  {
+    "job_id": "dbp0rd0ou4as73csr3t0",
+    "backend": "ibm_marrakesh",
+    "simulator": false,
+    "label": "stage7 run 1",
+    "submitted_utc": "2026-11-09T18:15:15.179639+00:00",
+    "finished_utc": "2026-11-09T18:16:24.268306+00:00",
+    "circuits": 800,
+    "total_shots": 122320,
+    "estimated_seconds": 37.0,
+    "quantum_seconds": 36.0,
+    "seed_transpiler": 0,
+    "physical_qubits": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      17
+    ]
+  },
+  {
+    "job_id": "dbp0s1lt7fqc7388jap0",
+    "backend": "ibm_marrakesh",
+    "simulator": false,
+    "label": "stage7 run 2",
+    "submitted_utc": "2026-11-09T18:16:36.074246+00:00",
+    "finished_utc": "2026-11-09T18:17:40.591275+00:00",
+    "circuits": 800,
+    "total_shots": 122320,
+    "estimated_seconds": 37.0,
+    "quantum_seconds": 36.0,
+    "seed_transpiler": 0,
+    "physical_qubits": [
+      4,
+      5,
+      6,
+      7,
+      8,
+      17
+    ]
+  },
+  {
+    "job_id": "dbp11agqtr0c738djefg",
+    "backend": "ibm_marrakesh",
+    "simulator": false,
+    "label": "stage4 run 1 entanglement, 2 qubits QNN 2-copy",
+    "submitted_utc": "2026-11-09T18:27:52.945242+00:00",
+    "finished_utc": "2026-11-09T18:28:08.978879+00:00",
+    "circuits": 56,
+    "total_shots": 14336,
+    "estimated_seconds": 7.0,
+    "quantum_seconds": 6.0,
+    "seed_transpiler": 0,
+    "physical_qubits": [
+      5,
+      6,
+      7,
+      17
+    ]
+  },
+  {
+    "job_id": "dbp11eoou4as73csrgp0",
+    "backend": "ibm_marrakesh",
+    "simulator": false,
+    "label": "stage4 run 1 entanglement, 2 qubits snapshots",
+    "submitted_utc": "2026-11-09T18:28:10.076282+00:00",
+    "finished_utc": "2026-11-09T18:28:37.678153+00:00",
+    "circuits": 504,
+    "total_shots": 28224,
+    "estimated_seconds": 10.9,
+    "quantum_seconds": 11.0,
+    "seed_transpiler": 0,
+    "physical_qubits": [
+      0,
+      1
+    ]
+  },
+  {
+    "job_id": "dbp11mc4148s739tpbpg",
+    "backend": "ibm_marrakesh",
+    "simulator": false,
+    "label": "stage4 run 1 Ising phases, 4 qubits QCNN",
+    "submitted_utc": "2026-11-09T18:28:41.323333+00:00",
+    "finished_utc": "2026-11-09T18:29:00.658440+00:00",
+    "circuits": 56,
+    "total_shots": 28672,
+    "estimated_seconds": 11.0,
+    "quantum_seconds": 10.0,
+    "seed_transpiler": 0,
+    "physical_qubits": [
+      5,
+      6,
+      7,
+      17
+    ]
+  },
+  {
+    "job_id": "dbp11rlt7fqc7388jns0",
+    "backend": "ibm_marrakesh",
+    "simulator": false,
+    "label": "stage4 run 1 Ising phases, 4 qubits snapshots",
+    "submitted_utc": "2026-11-09T18:29:02.004888+00:00",
+    "finished_utc": "2026-11-09T18:29:29.815204+00:00",
+    "circuits": 112,
+    "total_shots": 28672,
+    "estimated_seconds": 11.0,
+    "quantum_seconds": 10.0,
+    "seed_transpiler": 0,
+    "physical_qubits": [
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  {
+    "job_id": "dbp124gqtr0c738djg4g",
+    "backend": "ibm_marrakesh",
+    "simulator": false,
+    "label": "stage4 run 2 entanglement, 2 qubits QNN 2-copy",
+    "submitted_utc": "2026-11-09T18:29:37.185036+00:00",
+    "finished_utc": "2026-11-09T18:29:52.496973+00:00",
+    "circuits": 56,
+    "total_shots": 14336,
+    "estimated_seconds": 7.0,
+    "quantum_seconds": 6.0,
+    "seed_transpiler": 0,
+    "physical_qubits": [
+      5,
+      6,
+      7,
+      17
+    ]
+  },
+  {
+    "job_id": "dbp128k4148s739tpcv0",
+    "backend": "ibm_marrakesh",
+    "simulator": false,
+    "label": "stage4 run 2 entanglement, 2 qubits snapshots",
+    "submitted_utc": "2026-11-09T18:29:53.627848+00:00",
+    "finished_utc": "2026-11-09T18:30:20.360287+00:00",
+    "circuits": 504,
+    "total_shots": 28224,
+    "estimated_seconds": 10.9,
+    "quantum_seconds": 11.0,
+    "seed_transpiler": 0,
+    "physical_qubits": [
+      0,
+      1
+    ]
+  },
+  {
+    "job_id": "dbp12g5t7fqc7388jp20",
+    "backend": "ibm_marrakesh",
+    "simulator": false,
+    "label": "stage4 run 2 Ising phases, 4 qubits QCNN",
+    "submitted_utc": "2026-11-09T18:30:24.083888+00:00",
+    "finished_utc": "2026-11-09T18:30:43.956328+00:00",
+    "circuits": 56,
+    "total_shots": 28672,
+    "estimated_seconds": 11.0,
+    "quantum_seconds": 10.0,
+    "seed_transpiler": 0,
+    "physical_qubits": [
+      5,
+      6,
+      7,
+      17
+    ]
+  },
+  {
+    "job_id": "dbp12lc4148s739tpdm0",
+    "backend": "ibm_marrakesh",
+    "simulator": false,
+    "label": "stage4 run 2 Ising phases, 4 qubits snapshots",
+    "submitted_utc": "2026-11-09T18:30:45.275120+00:00",
+    "finished_utc": "2026-11-09T18:31:06.586569+00:00",
+    "circuits": 112,
+    "total_shots": 28672,
+    "estimated_seconds": 11.0,
+    "quantum_seconds": 10.0,
+    "seed_transpiler": 0,
+    "physical_qubits": [
+      4,
+      5,
+      6,
+      7
+    ]
+  }
+]

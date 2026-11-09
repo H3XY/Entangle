@@ -1,0 +1,327 @@
+{
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "results": {
+    "2": {
+      "QNN 2-copy, shared, transferred from 2 qubits: copies for 90%": {
+        "grid_definition": 32,
+        "per_seed": [
+          64,
+          16,
+          16
+        ],
+        "median": 16.0,
+        "min": 16.0,
+        "max": 64.0
+      },
+      "Classical shadows (purity estimates): copies for 90%": {
+        "grid_definition": 128,
+        "per_seed": [
+          128,
+          128,
+          128
+        ],
+        "median": 128.0,
+        "min": 128.0,
+        "max": 128.0
+      },
+      "QNN 2-copy, shared, transferred from 2 qubits: exact accuracy": {
+        "mean": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "per_seed": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "QNN 2-copy, per-pair blocks, from scratch: exact accuracy": {
+        "mean": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "per_seed": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "QNN 2-copy, shared block, from scratch: exact accuracy": {
+        "mean": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "per_seed": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "QNN 1-copy: exact accuracy": {
+        "mean": 0.5116666666666667,
+        "std": 0.03785938897200186,
+        "min": 0.485,
+        "max": 0.555,
+        "per_seed": [
+          0.485,
+          0.495,
+          0.555
+        ]
+      }
+    },
+    "3": {
+      "QNN 2-copy, shared, transferred from 2 qubits: copies for 90%": {
+        "grid_definition": 16,
+        "per_seed": [
+          16,
+          16,
+          16
+        ],
+        "median": 16.0,
+        "min": 16.0,
+        "max": 16.0
+      },
+      "Classical shadows (purity estimates): copies for 90%": {
+        "grid_definition": 256,
+        "per_seed": [
+          256,
+          256,
+          256
+        ],
+        "median": 256.0,
+        "min": 256.0,
+        "max": 256.0
+      },
+      "QNN 2-copy, shared, transferred from 2 qubits: exact accuracy": {
+        "mean": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "per_seed": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "QNN 2-copy, per-pair blocks, from scratch: exact accuracy": {
+        "mean": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "per_seed": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "QNN 2-copy, shared block, from scratch: exact accuracy": {
+        "mean": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "per_seed": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "QNN 1-copy: exact accuracy": {
+        "mean": 0.5208333333333334,
+        "std": 0.04274439534410718,
+        "min": 0.4925,
+        "max": 0.57,
+        "per_seed": [
+          0.4925,
+          0.5,
+          0.57
+        ]
+      }
+    },
+    "4": {
+      "QNN 2-copy, shared, transferred from 2 qubits: copies for 90%": {
+        "grid_definition": 32,
+        "per_seed": [
+          32,
+          16,
+          16
+        ],
+        "median": 16.0,
+        "min": 16.0,
+        "max": 32.0
+      },
+      "Classical shadows (purity estimates): copies for 90%": {
+        "grid_definition": 512,
+        "per_seed": [
+          512,
+          512,
+          512
+        ],
+        "median": 512.0,
+        "min": 512.0,
+        "max": 512.0
+      },
+      "QNN 2-copy, shared, transferred from 2 qubits: exact accuracy": {
+        "mean": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "per_seed": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "QNN 2-copy, per-pair blocks, from scratch: exact accuracy": {
+        "mean": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "per_seed": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "QNN 2-copy, shared block, from scratch: exact accuracy": {
+        "mean": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "per_seed": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "QNN 1-copy: exact accuracy": {
+        "mean": 0.4825,
+        "std": 0.010897247358851694,
+        "min": 0.475,
+        "max": 0.495,
+        "per_seed": [
+          0.475,
+          0.495,
+          0.4775
+        ]
+      }
+    },
+    "5": {
+      "QNN 2-copy, shared, transferred from 2 qubits: copies for 90%": {
+        "grid_definition": 32,
+        "per_seed": [
+          16,
+          32,
+          16
+        ],
+        "median": 16.0,
+        "min": 16.0,
+        "max": 32.0
+      },
+      "Classical shadows (purity estimates): copies for 90%": {
+        "grid_definition": 1024,
+        "per_seed": [
+          2048,
+          1024,
+          2048
+        ],
+        "median": 2048.0,
+        "min": 1024.0,
+        "max": 2048.0
+      },
+      "QNN 2-copy, shared, transferred from 2 qubits: exact accuracy": {
+        "mean": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "per_seed": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "QNN 2-copy, per-pair blocks, from scratch: exact accuracy": {
+        "mean": 0.8516666666666667,
+        "std": 0.25692086978938344,
+        "min": 0.555,
+        "max": 1.0,
+        "per_seed": [
+          0.555,
+          1.0,
+          1.0
+        ]
+      },
+      "QNN 2-copy, shared block, from scratch: exact accuracy": {
+        "mean": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "per_seed": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "QNN 1-copy: exact accuracy": {
+        "mean": 0.5216666666666666,
+        "std": 0.025166114784235857,
+        "min": 0.495,
+        "max": 0.545,
+        "per_seed": [
+          0.545,
+          0.525,
+          0.495
+        ]
+      }
+    },
+    "6": {
+      "QNN 2-copy, shared, transferred from 2 qubits: copies for 90%": {
+        "grid_definition": 32,
+        "per_seed": [
+          64,
+          32,
+          16
+        ],
+        "median": 32.0,
+        "min": 16.0,
+        "max": 64.0
+      },
+      "Classical shadows (purity estimates): copies for 90%": {
+        "grid_definition": 4096,
+        "per_seed": [
+          2048,
+          4096,
+          4096
+        ],
+        "median": 4096.0,
+        "min": 2048.0,
+        "max": 4096.0
+      },
+      "QNN 2-copy, shared, transferred from 2 qubits: exact accuracy": {
+        "mean": 1.0,
+        "std": 0.0,
+        "min": 1.0,
+        "max": 1.0,
+        "per_seed": [
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "QNN 1-copy: exact accuracy": {
+        "mean": 0.4741666666666666,
+        "std": 0.03185252475602732,
+        "min": 0.4375,
+        "max": 0.495,
+        "per_seed": [
+          0.495,
+          0.49,
+          0.4375
+        ]
+      }
+    }
+  }
+}

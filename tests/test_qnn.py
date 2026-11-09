@@ -185,3 +185,37 @@ def test_wilson_loops_limits():
     _, v = dual_spectrum(3, 2.0, k=1)
     w11, w22 = wilson_loop(v[:, 0], 3, 1, 1), wilson_loop(v[:, 0], 3, 2, 2)
     assert 0 < w22 < w11 ** 3  # decays faster than the perimeter would allow: area law
+
+
+def test_stage7_circuits_match_simulator():
+    """Hardware purity circuits (3-qubit purifications, 2 copies, system qubits 0,1,3,4)
+    give the same P(class 1) as the batched simulator on the mixed state."""
+    from qiskit.quantum_info import Statevector
+
+    from entangle.circuits import two_copy_model
+    from entangle.qnn import QuantumClassifier
+    from entangle.states import make_purity_data
+    from stage7_hardware_purity import qnn_circuit, shadow_circuit
+
+    data = make_purity_data(2, 4, seed=3)
+    model = two_copy_model(2, "parity", shared=True)
+    clf = QuantumClassifier(model)
+    clf.weights = np.random.default_rng(0).uniform(-np.pi, np.pi, model.num_weights)
+    p_sim = clf.raw_proba(data.states)
+    for i, A in enumerate(data.states):
+        qc = qnn_circuit(model, clf.weights, A).remove_final_measurements(inplace=False)
+        probs = Statevector(qc).probabilities([0, 1, 3, 4])   # index bit k = measured qubit k
+        assert probs[model.readout].sum() == pytest.approx(p_sim[i], abs=1e-9)
+        # shadow circuit in the Z basis reproduces the system marginal of rho = A A^dagger
+        sc = shadow_circuit(A, [2, 2]).remove_final_measurements(inplace=False)
+        rho = A @ A.conj().T
+        assert np.allclose(Statevector(sc).probabilities([0, 1]), np.real(np.diag(rho)), atol=1e-9)
+
+
+def test_budget_guard_refuses_over_cap():
+    from entangle.ibm import Budget
+    b = Budget(floor=None, cap=10)
+    b.spent = 8
+    with pytest.raises(SystemExit):
+        b.check(5)
+    b.check(1)
