@@ -72,3 +72,21 @@ def test_two_copy_model_learns_entanglement():
     d = make_entanglement_data(2, 120, seed=11)
     clf = QuantumClassifier(two_copy_model(2)).fit(d.states[:60], d.y[:60], maxiter=100, restarts=2)
     assert np.mean(clf.predict(d.states[60:]) == d.y[60:]) > 0.95
+
+
+def test_ising_ground_state_is_the_true_ground_state():
+    from entangle.states import tfim_ground_state, tfim_hamiltonian
+    for h in (0.3, 1.0, 1.7):
+        psi, e = tfim_ground_state(5, h)
+        H = tfim_hamiltonian(5, h)
+        assert e == pytest.approx(np.linalg.eigvalsh(H)[0])
+        assert np.allclose(H @ psi, e * psi, atol=1e-8)
+
+
+def test_qcnn_output_depends_on_ising_state():
+    """Regression: the tutorial QCNN blocks gave a constant 0.5 on Ising ground states."""
+    from entangle.states import make_phase_data
+    d = make_phase_data(4, 8, seed=2)
+    clf = QuantumClassifier(qcnn_model(4))
+    p = clf.raw_proba(d.states, np.random.default_rng(0).uniform(-3, 3, clf.model.num_weights))
+    assert np.ptp(p) > 1e-3

@@ -14,3 +14,11 @@ python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ```
 
 Results: [results/stage1_entanglement.md](results/stage1_entanglement.md)
+
+## Stage 2: Ising chain phases (QCNN)
+
+```bash
+.venv/bin/python stage2_phases.py              # 4, 6, 8 qubits, about 2 minutes
+```
+
+Results: [results/stage2_phases.md](results/stage2_phases.md)

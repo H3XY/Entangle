@@ -143,7 +143,7 @@ def estimate_expectations(settings, bits, paulis):
     return est, sq
 
 
-def shadow_features(snapshots, n, paulis):
+def shadow_features(snapshots, n, paulis, purities=True):
     """Feature matrix: [<P> estimates..., single-qubit purity estimates...] per state."""
     idx = {p: k for k, p in enumerate(paulis)}
     rows = []
@@ -151,13 +151,15 @@ def shadow_features(snapshots, n, paulis):
         est, sq = estimate_expectations(settings, bits, paulis)
         pur = [(1 + sum(sq[idx[((q, b),)]] for b in (X, Y, Z) if ((q, b),) in idx)) / 2
                for q in range(n)]
-        rows.append(np.concatenate([est, pur]))
+        rows.append(np.concatenate([est, pur]) if purities else est)
     return np.array(rows)
 
 
-def exact_features(states, n, paulis):
+def exact_features(states, n, paulis, purities=True):
     """Same features with exact expectation values (infinite shots)."""
     E = exact_expectations(states, n, paulis)
+    if not purities:
+        return E
     idx = {p: k for k, p in enumerate(paulis)}
     pur = np.stack([(1 + sum(E[:, idx[((q, b),)]] ** 2 for b in (X, Y, Z) if ((q, b),) in idx)) / 2
                     for q in range(n)], axis=1)
