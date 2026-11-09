@@ -1,5 +1,7 @@
 # Hardware summary: ibm_marrakesh vs FakeMarrakesh
 
+FakeMarrakesh rows replay the IDENTICAL transpiled circuits of the real jobs (same physical qubits, gates and shots; fetch_ibm_results.py --replay). Per-qubit calibration: review_calibration.md.
+
 Every number is test accuracy. Mean ± std over independent runs (same test states, same transpiler seed); in brackets a Wilson 95% interval for all test predictions pooled over runs. Each cell: ideal (noise-free simulation, same shots), device, device recalibrated on labelled device states.
 
 ## Stage 7: pure or mixed (2 qubits, 2-copy test vs classical shadows)
@@ -11,7 +13,7 @@ Every number is test accuracy. Mean ± std over independent runs (same test stat
 | ibm_marrakesh | SVM (RBF) (classical shadows) | 2 | 1.000 ± 0.000 [0.97, 1.00] | 1.000 ± 0.000 [0.97, 1.00] | 1.000 ± 0.000 [0.97, 1.00] |
 | ibm_marrakesh | MLP (classical shadows) | 2 | 1.000 ± 0.000 [0.97, 1.00] | 1.000 ± 0.000 [0.97, 1.00] | 1.000 ± 0.000 [0.97, 1.00] |
 | FakeMarrakesh | QNN 2-copy (parity, shared) | 2 | 1.000 ± 0.000 [0.97, 1.00] | 1.000 ± 0.000 [0.97, 1.00] | 1.000 ± 0.000 [0.97, 1.00] |
-| FakeMarrakesh | Logistic regression (classical shadows) | 2 | 1.000 ± 0.000 [0.97, 1.00] | 1.000 ± 0.000 [0.97, 1.00] | 1.000 ± 0.000 [0.97, 1.00] |
+| FakeMarrakesh | Logistic regression (classical shadows) | 2 | 1.000 ± 0.000 [0.97, 1.00] | 1.000 ± 0.000 [0.97, 1.00] | 0.992 ± 0.012 [0.95, 1.00] |
 | FakeMarrakesh | SVM (RBF) (classical shadows) | 2 | 1.000 ± 0.000 [0.97, 1.00] | 1.000 ± 0.000 [0.97, 1.00] | 1.000 ± 0.000 [0.97, 1.00] |
 | FakeMarrakesh | MLP (classical shadows) | 2 | 1.000 ± 0.000 [0.97, 1.00] | 1.000 ± 0.000 [0.97, 1.00] | 1.000 ± 0.000 [0.97, 1.00] |
 
@@ -21,15 +23,15 @@ Accuracy vs copies of each test state, subsampled from the device counts and rec
 |---|---|---|---|---|---|---|---|---|
 | ibm_marrakesh | QNN 2-copy | 0.773 ± 0.026 | 0.856 ± 0.012 | 0.929 ± 0.005 | 0.976 ± 0.002 | 0.999 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
 | ibm_marrakesh | Classical shadows (logistic regression) | – | 0.653 ± 0.008 | 0.790 ± 0.018 | 0.907 ± 0.012 | 0.963 ± 0.001 | 0.986 ± 0.005 | 1.000 ± 0.000 |
-| FakeMarrakesh | QNN 2-copy | 0.838 ± 0.002 | 0.908 ± 0.009 | 0.965 ± 0.011 | 0.992 ± 0.001 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
-| FakeMarrakesh | Classical shadows (logistic regression) | – | 0.671 ± 0.020 | 0.813 ± 0.019 | 0.910 ± 0.011 | 0.964 ± 0.010 | 0.987 ± 0.011 | 1.000 ± 0.000 |
+| FakeMarrakesh | QNN 2-copy | 0.799 ± 0.007 | 0.902 ± 0.000 | 0.950 ± 0.002 | 0.992 ± 0.002 | 1.000 ± 0.000 | 1.000 ± 0.000 | 1.000 ± 0.000 |
+| FakeMarrakesh | Classical shadows (logistic regression) | – | 0.680 ± 0.010 | 0.815 ± 0.015 | 0.917 ± 0.005 | 0.967 ± 0.004 | 0.987 ± 0.004 | 0.992 ± 0.012 |
 
 Mean shift of the QNN output, device minus exact P(class 1), per run (all; pure / mixed):
 
 | Device | All test states | Pure / mixed |
 |---|---|---|
 | ibm_marrakesh | +0.0376, +0.0410 | +0.0537 / +0.0214, +0.0623 / +0.0196 |
-| FakeMarrakesh | +0.0151, +0.0166 | +0.0216 / +0.0086, +0.0228 / +0.0104 |
+| FakeMarrakesh | +0.0218, +0.0194 | +0.0300 / +0.0136, +0.0298 / +0.0089 |
 
 ## Stage 4: entanglement (2-copy QNN) and Ising phases (QCNN) vs classical snapshots
 
@@ -43,18 +45,14 @@ Mean shift of the QNN output, device minus exact P(class 1), per run (all; pure 
 | ibm_marrakesh | Ising phases, 4 qubits | Logistic regression (snapshots) | 0.975 ± 0.000 [0.91, 0.99] | 0.950 ± 0.035 [0.88, 0.98] | 0.962 ± 0.018 [0.90, 0.99] |
 | ibm_marrakesh | Ising phases, 4 qubits | SVM (RBF) (snapshots) | 0.950 ± 0.000 [0.88, 0.98] | 0.962 ± 0.018 [0.90, 0.99] | 0.900 ± 0.035 [0.81, 0.95] |
 | ibm_marrakesh | Ising phases, 4 qubits | MLP (snapshots) | 0.975 ± 0.000 [0.91, 0.99] | 0.950 ± 0.035 [0.88, 0.98] | 0.950 ± 0.000 [0.88, 0.98] |
-| FakeMarrakesh | entanglement, 2 qubits | QNN 2-copy | 1.000 ± 0.000 [0.95, 1.00] | 1.000 ± 0.000 [0.95, 1.00] | 0.975 ± 0.035 [0.91, 0.99] |
-| FakeMarrakesh | entanglement, 2 qubits | Logistic regression (snapshots) | 1.000 ± 0.000 [0.95, 1.00] | 1.000 ± 0.000 [0.95, 1.00] | 0.950 ± 0.071 [0.88, 0.98] |
-| FakeMarrakesh | entanglement, 2 qubits | SVM (RBF) (snapshots) | 0.975 ± 0.000 [0.91, 0.99] | 1.000 ± 0.000 [0.95, 1.00] | 0.963 ± 0.053 [0.90, 0.99] |
-| FakeMarrakesh | entanglement, 2 qubits | MLP (snapshots) | 0.975 ± 0.000 [0.91, 0.99] | 1.000 ± 0.000 [0.95, 1.00] | 0.950 ± 0.071 [0.88, 0.98] |
-| FakeMarrakesh | entanglement, 3 qubits | QNN 2-copy | 1.000 ± 0.000 [0.95, 1.00] | 0.988 ± 0.018 [0.93, 1.00] | 0.988 ± 0.018 [0.93, 1.00] |
-| FakeMarrakesh | entanglement, 3 qubits | Logistic regression (snapshots) | 1.000 ± 0.000 [0.95, 1.00] | 1.000 ± 0.000 [0.95, 1.00] | 1.000 ± 0.000 [0.95, 1.00] |
-| FakeMarrakesh | entanglement, 3 qubits | SVM (RBF) (snapshots) | 0.975 ± 0.000 [0.91, 0.99] | 1.000 ± 0.000 [0.95, 1.00] | 1.000 ± 0.000 [0.95, 1.00] |
-| FakeMarrakesh | entanglement, 3 qubits | MLP (snapshots) | 0.975 ± 0.000 [0.91, 0.99] | 1.000 ± 0.000 [0.95, 1.00] | 1.000 ± 0.000 [0.95, 1.00] |
-| FakeMarrakesh | Ising phases, 4 qubits | QCNN | 0.925 ± 0.000 [0.85, 0.97] | 0.975 ± 0.035 [0.91, 0.99] | 0.988 ± 0.018 [0.93, 1.00] |
-| FakeMarrakesh | Ising phases, 4 qubits | Logistic regression (snapshots) | 1.000 ± 0.000 [0.95, 1.00] | 0.962 ± 0.018 [0.90, 0.99] | 0.962 ± 0.018 [0.90, 0.99] |
-| FakeMarrakesh | Ising phases, 4 qubits | SVM (RBF) (snapshots) | 0.975 ± 0.000 [0.91, 0.99] | 0.975 ± 0.000 [0.91, 0.99] | 0.925 ± 0.035 [0.85, 0.97] |
-| FakeMarrakesh | Ising phases, 4 qubits | MLP (snapshots) | 1.000 ± 0.000 [0.95, 1.00] | 0.975 ± 0.000 [0.91, 0.99] | 0.925 ± 0.035 [0.85, 0.97] |
+| FakeMarrakesh | entanglement, 2 qubits | QNN 2-copy | 1.000 ± 0.000 [0.95, 1.00] | 0.962 ± 0.018 [0.90, 0.99] | 0.975 ± 0.000 [0.91, 0.99] |
+| FakeMarrakesh | entanglement, 2 qubits | Logistic regression (snapshots) | 1.000 ± 0.000 [0.95, 1.00] | 0.988 ± 0.018 [0.93, 1.00] | 0.988 ± 0.018 [0.93, 1.00] |
+| FakeMarrakesh | entanglement, 2 qubits | SVM (RBF) (snapshots) | 0.975 ± 0.000 [0.91, 0.99] | 0.975 ± 0.000 [0.91, 0.99] | 0.988 ± 0.018 [0.93, 1.00] |
+| FakeMarrakesh | entanglement, 2 qubits | MLP (snapshots) | 0.975 ± 0.000 [0.91, 0.99] | 0.975 ± 0.000 [0.91, 0.99] | 1.000 ± 0.000 [0.95, 1.00] |
+| FakeMarrakesh | Ising phases, 4 qubits | QCNN | 0.950 ± 0.000 [0.88, 0.98] | 0.988 ± 0.018 [0.93, 1.00] | 0.975 ± 0.035 [0.91, 0.99] |
+| FakeMarrakesh | Ising phases, 4 qubits | Logistic regression (snapshots) | 0.975 ± 0.000 [0.91, 0.99] | 0.975 ± 0.000 [0.91, 0.99] | 0.950 ± 0.071 [0.88, 0.98] |
+| FakeMarrakesh | Ising phases, 4 qubits | SVM (RBF) (snapshots) | 0.950 ± 0.000 [0.88, 0.98] | 0.938 ± 0.018 [0.86, 0.97] | 0.950 ± 0.035 [0.88, 0.98] |
+| FakeMarrakesh | Ising phases, 4 qubits | MLP (snapshots) | 0.975 ± 0.000 [0.91, 0.99] | 0.975 ± 0.000 [0.91, 0.99] | 0.950 ± 0.071 [0.88, 0.98] |
 
 Mean shift of the quantum models' output, device minus exact P(class 1), per run:
 
@@ -62,9 +60,8 @@ Mean shift of the quantum models' output, device minus exact P(class 1), per run
 |---|---|---|---|
 | ibm_marrakesh | entanglement, 2 qubits | QNN 2-copy | +0.0284, +0.0316 |
 | ibm_marrakesh | Ising phases, 4 qubits | QCNN | -0.0066, -0.0085 |
-| FakeMarrakesh | entanglement, 2 qubits | QNN 2-copy | +0.0086, +0.0104 |
-| FakeMarrakesh | entanglement, 3 qubits | QNN 2-copy | +0.0185, +0.0246 |
-| FakeMarrakesh | Ising phases, 4 qubits | QCNN | -0.0046, -0.0054 |
+| FakeMarrakesh | entanglement, 2 qubits | QNN 2-copy | +0.0161, +0.0152 |
+| FakeMarrakesh | Ising phases, 4 qubits | QCNN | -0.0068, -0.0086 |
 
 ## Calibration of the physical qubits used (medians)
 

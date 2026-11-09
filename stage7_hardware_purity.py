@@ -27,6 +27,8 @@ Repeat runs reuse the same test states and the same physical qubits (`--layout`,
 printed by the first run), so they differ only in device noise and drift.
 
 Usage:
+    python stage7_hardware_purity.py --replay FakeMarrakesh --layout 4 6 5 8 17 7 --run-label "run 1" \
+        --tag fakemarrakesh --new     # the identical circuits of the real run, on the fake noise model
     python stage7_hardware_purity.py --fake                        # FakeMarrakesh noise model (local)
     python stage7_hardware_purity.py --backend ibm_marrakesh        # real device (asks first)
     python stage7_hardware_purity.py --backend ibm_marrakesh --layout 1 2 3 4 5 6 --yes
@@ -148,13 +150,20 @@ def run(args, backend, budget):
     prep_twoq = {"pure": float(np.mean([twoq[len(qnn) + i * 9] for i in range(len(A_all)) if y_all[i] == 0])),
                  "mixed": float(np.mean([twoq[len(qnn) + i * 9] for i in range(len(A_all)) if y_all[i] == 1]))}
 
-    out = {"run_label": args.run_label, "backend": backend.name, "fake": args.fake, "layout": layout,
-           "job": {k: v for k, v in info.items() if k not in ("layouts", "two_qubit_gates")},
+    replay_fake = args.replay and args.replay != "ibm"
+    if replay_fake:  # calibration of the fake backend's model of the same physical qubits
+        from qiskit_ibm_runtime import fake_provider
+        cal_backend = getattr(fake_provider, args.replay)()
+    out = {"run_label": args.run_label, "backend": info["backend"] if args.replay else backend.name,
+           "fake": bool(replay_fake) or (args.fake and not args.replay), "replay": args.replay, "layout": layout,
+           "job": {k: v for k, v in info.items() if k not in ("layouts", "two_qubit_gates")}
+                  | ({"job_id": f"replay of {info['job_id']}", "quantum_seconds": None} if replay_fake else {}),
            "test_states": nt, "calibration_states": args.calibrate, "copies": args.copies,
            "two_qubit_gates_in_shadow_circuit": prep_twoq,
            "two_qubit_gates_in_qnn_circuit": {"mean": float(np.mean(twoq[:len(qnn)])),
                                               "min": int(min(twoq[:len(qnn)])), "max": int(max(twoq[:len(qnn)]))},
-           "calibration_snapshot": ibm.calibration_snapshot(backend, layout),
+           "calibration_snapshot": (ibm.calibration_snapshot(cal_backend, layout) if replay_fake else
+                                    None if args.replay else ibm.calibration_snapshot(backend, layout)),
            "test_y": test.y.tolist(), "true_purity": test.purity.tolist(), "models": {}}
 
     # ---- QNN 2-copy
@@ -314,10 +323,16 @@ def main():
     p.add_argument("--cap", type=float, default=170.0, help="most quantum seconds this run may spend")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--yes", action="store_true")
+    p.add_argument("--replay", help="no device: recompute from saved counts in results/ibm_raw, either 'ibm' "
+                                    "or a fake backend that replayed the identical circuits (e.g. FakeMarrakesh); "
+                                    "needs --layout and --run-label of the original run")
     args = p.parse_args()
+    if args.replay:
+        ibm.set_replay(args.replay)
+        args.fake = True  # no account, no budget; the backend below is only used to rebuild circuits
     tag = args.tag or (args.backend_fake.lower() if args.fake else "ibm")
     est = ibm.estimate_seconds((args.test + args.calibrate) * (args.copies // 2 + (args.copies // 9) * 9))
-    if not args.fake and not args.yes:
+    if not args.fake and not args.yes and not args.replay:
         ans = input(f"This sends {(args.test + args.calibrate) * 10} circuits to {args.backend} "
                     f"(~{est:.0f} s of quantum time). Continue? [y/N] ")
         if ans.strip().lower() != "y":

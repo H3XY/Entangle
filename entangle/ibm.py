@@ -57,6 +57,42 @@ def get_backend(fake, backend_fake=None, backend=None, min_qubits=1):
     return b
 
 
+# --------------------------------------------------------------------------- #
+# Offline replay: recompute results from saved counts (results/ibm_raw), no device
+# --------------------------------------------------------------------------- #
+
+REPLAY = None   # {job label: (job record, counts list, circuits)} when replaying
+
+
+def set_replay(source="ibm"):
+    """Serve run_pubs from saved data instead of a device.
+
+    source "ibm": the counts IBM returned; or a fake backend name, e.g. "FakeMarrakesh":
+    counts from replaying the identical ISA circuits on it (fetch_ibm_results.py --replay)."""
+    import gzip
+    from qiskit import qpy
+    global REPLAY
+    REPLAY = {}
+    raw = report.path("ibm_raw")
+    for j in json.load(open(report.path(JOB_LOG))):
+        suffix = "counts.json" if source == "ibm" else f"{source.lower()}.counts.json"
+        data = json.load(open(os.path.join(raw, f"{j['job_id']}.{suffix}")))
+        with gzip.open(os.path.join(raw, f"{j['job_id']}.qpy.gz"), "rb") as f:
+            circuits = qpy.load(f)
+        REPLAY[j["label"]] = (dict(j, replay_source=source, backend=data["backend"]), data["counts"], circuits)
+
+
+def _replayed(label, n_circuits):
+    if label not in REPLAY:
+        raise SystemExit(f"No saved job with label {label!r} to replay.")
+    rec, counts, circuits = REPLAY[label]
+    if len(counts) != n_circuits:
+        raise SystemExit(f"Saved job {rec['job_id']} has {len(counts)} circuits, expected {n_circuits}.")
+    layouts = [list(c.layout.final_index_layout()) if c.layout is not None else None for c in circuits]
+    two_q = [sum(v for k, v in c.count_ops().items() if k in ("cz", "cx", "ecr")) for c in circuits]
+    return counts, dict(rec, layouts=layouts, two_qubit_gates=two_q)
+
+
 def estimate_seconds(total_shots, jobs=1):
     return SECONDS_PER_SHOT * total_shots + SECONDS_PER_JOB * jobs
 
@@ -125,6 +161,8 @@ def run_pubs(backend, circuits, shots, seed=None, simulator=False, budget=None, 
 
     Returns (counts per circuit, info dict with job ID, layouts, timing, quantum seconds).
     """
+    if REPLAY is not None:
+        return _replayed(label, len(circuits))
     from qiskit_ibm_runtime import SamplerV2
     isa = list(circuits) if transpiled else transpile(backend, circuits, seed, initial_layout)
     shot_list = [shots] * len(isa) if isinstance(shots, int) else [int(s) for s in shots]

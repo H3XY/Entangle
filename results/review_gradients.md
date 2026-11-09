@@ -19,7 +19,9 @@ Signal D(w) = mean P(class 1) over mixed states minus over pure states, on 16 st
 
 Fitted decay of the gradient variance (log2-linear fit over n):
 
-| Model | log2 slope per qubit | variance shrinks by a factor of, per qubit |
-|---|---|---|
-| per-pair blocks | -1.97 | 3.91 |
-| shared block | -0.80 | 1.74 |
+| Model | log2 slope per qubit | shrink factor per qubit | Per-seed slopes | 95% CI over seeds (t) | 95% CI, bootstrap over draws |
+|---|---|---|---|---|---|
+| per-pair blocks | -1.97 | 3.91 | -1.95, -1.94, -2.01 | [-2.06, -1.87] | [-1.98, -1.95] |
+| shared block | -0.80 | 1.74 | -1.05, -0.76, -0.79 | [-1.26, -0.47] | [-1.01, -0.69] |
+
+The fit is over n = 2, 3, 4, 5, 6, 7 only: it describes an exponential-like decay over the measured range and does not establish the asymptotic rate.
