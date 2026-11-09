@@ -33,6 +33,12 @@ per added qubit, as theory predicts. The two-copy QNN needs 16–32 copies at
 every size. In every stage the advantage comes from measuring two copies
 together, not from the trainable circuit.
 
+**Stage 6** is a toy lattice gauge theory: Z2 gauge theory with one qubit per
+link. It shows confinement and an energy gap that closes only at a phase
+transition. It is *not* Yang–Mills theory and says nothing toward the
+Millennium problem's proof; [docs/YANG_MILLS.md](docs/YANG_MILLS.md) explains
+what that problem asks and what is known.
+
 ## How it works
 
 ```
@@ -210,6 +216,48 @@ plateau of global cost functions. Two fixes work:
 The transferred model is the one in the table. So the exponential advantage at
 *measurement* time comes with a *training* hazard that has to be designed around.
 
+### Stage 6: a toy lattice gauge theory (not Yang–Mills)
+
+Z2 lattice gauge theory in 2+1 dimensions on an L × L torus, one qubit per link
+(8, 18 and 32 qubits for L = 2, 3, 4) ([entangle/gauge.py](entangle/gauge.py)):
+
+    H = − Σ_plaquettes Z Z Z Z − g Σ_links X
+
+Physical states obey Gauss's law at every vertex. Spectra come from Wegner
+duality, an exact map to the 2D quantum Ising model with one spin per
+plaquette. The tests check it against direct simulation of the link qubits.
+The infinite-lattice transition is at g_c ≈ 0.3285.
+
+![Stage 6](results/stage6_gauge.png)
+
+| | L = 2 | L = 3 | L = 4 |
+|---|---|---|---|
+| Gap at g = 0.1 (deconfined) | 3.48 | 3.27 | 3.21 |
+| Gap at g = 1.0 (confined) | 5.90 | 7.10 | 7.29 |
+| Minimum gap (near g_c) | 2.83 | 1.77 | 1.27 |
+| Creutz ratio (string tension) at g = 1.0 | – | 0.72 | 1.04 |
+
+- **Both phases have a gap** that settles as the lattice grows.
+- **Near the transition the gap shrinks** with every size, consistent with it
+  closing in infinite volume.
+- **Confinement switches on past g_c.** The Creutz ratio, an estimate of the
+  string tension, turns positive there, and Wilson loops decay with the
+  enclosed area.
+- **Phase classification** of the 8-qubit ground states works for the QCNN
+  (1.00 exact, 0.96 with 256 copies) and for classical learners on Z/X
+  snapshots of plaquettes and electric fields (0.97–0.98) alike. As with Ising,
+  there is no quantum edge.
+
+Full tables: [results/stage6_gauge.md](results/stage6_gauge.md).
+
+The connection to Yang–Mills is conceptual only. A mass gap is not automatic:
+here it closes at a phase transition. The conjecture for 4D SU(N) is that no
+such transition separates the provably gapped strong-coupling regime from the
+continuum. Z2 has no gluons, no asymptotic freedom and no continuum limit, and
+every finite lattice has a gap anyway. See
+[docs/YANG_MILLS.md](docs/YANG_MILLS.md) for the problem statement, the known
+rigorous results, and why no computation here amounts to progress on a proof.
+
 ### Stage 4: hardware
 
 Each test state is prepared on the device, then classified there.
@@ -286,6 +334,7 @@ python stage2_phases.py                # ~2 min  4-8 qubit Ising phases, QCNN
 python stage3_efficiency.py            # ~9 min  accuracy vs training states and vs shots
 python stage4_hardware.py --fake       # ~1 min  IBM device noise model, no account needed
 python stage5_purity.py                # ~35 min pure vs mixed, 2-6 qubits, copies-needed scaling
+python stage6_gauge.py                 # ~1 min  Z2 lattice gauge theory: gap, confinement, phases
 python -m pytest -q tests              # correctness checks
 ./security/audit_deps.sh               # pip-audit scan -> results/dependency_audit.md
 ```
@@ -317,7 +366,8 @@ Results go to `results/stage4_hardware_ibm.*`. The full default run is about
 ## Repo layout
 
 ```
-stage1_entanglement.py   stage2_phases.py   stage3_efficiency.py   stage4_hardware.py   stage5_purity.py
+stage1_entanglement.py ... stage6_gauge.py    one CLI per stage
+docs/YANG_MILLS.md       the Millennium problem: statement, known results, what stage 6 does not show
 entangle/
   states.py      product/entangled states, Meyer-Wallach Q, concurrence, Ising ground states, pure/mixed states
   circuits.py    1-copy QNN, 2-copy QNN, QCNN, generic ansatz (tied weights, readout masks)
@@ -325,6 +375,7 @@ entangle/
   qnn.py         training (exact probabilities, L-BFGS-B, readout calibration), mixed-state batches, shots
   measure.py     Pauli snapshots, feature estimates, shadow global-purity estimator, measurement circuits
   classical.py   logistic regression / RBF SVM / MLP baselines
+  gauge.py       Z2 lattice gauge theory: lattice, Wegner-dual solver, Wilson loops, link-qubit states
   report.py      JSON, Markdown and chart output
 tests/           simulator vs full unitary, adjoint vs parameter shift, vs SamplerQNN, physics checks
 security/        pip-audit dependency scan

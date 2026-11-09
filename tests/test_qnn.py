@@ -162,3 +162,26 @@ def test_two_copy_parity_readout_measures_global_purity():
     w[4] = -np.pi / 2
     p = clf.raw_proba(d.states, w)
     assert np.allclose(p, (1 - d.purity) / 2, atol=1e-9)
+
+
+@pytest.mark.parametrize("g", [0.1, 0.33, 1.2])
+def test_gauge_duality_gives_link_eigenstates_obeying_gauss_law(g):
+    from entangle.gauge import dual_spectrum, dual_to_links, gauss_operators, link_hamiltonian
+    w, v = dual_spectrum(2, g, k=2)
+    H = link_hamiltonian(2, g)
+    idx = np.arange(2 ** 8)
+    for k in range(2):  # ground and first excited state of the physical sector
+        psi = dual_to_links(v[:, k], 2)
+        assert np.linalg.norm(H @ psi - w[k] * psi) < 1e-9
+        for mask in gauss_operators(2):  # G_v flips the link bits at vertex v; G_v psi = psi
+            assert np.allclose(psi[idx ^ mask], psi)
+
+
+def test_wilson_loops_limits():
+    """g = 0: every plaquette is +1, so all Wilson loops are 1. Large g: area-law decay."""
+    from entangle.gauge import dual_spectrum, wilson_loop
+    _, v = dual_spectrum(3, 1e-6, k=1)
+    assert wilson_loop(v[:, 0], 3, 2, 2) == pytest.approx(1.0, abs=1e-6)
+    _, v = dual_spectrum(3, 2.0, k=1)
+    w11, w22 = wilson_loop(v[:, 0], 3, 1, 1), wilson_loop(v[:, 0], 3, 2, 2)
+    assert 0 < w22 < w11 ** 3  # decays faster than the perimeter would allow: area law

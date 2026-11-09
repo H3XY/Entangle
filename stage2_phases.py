@@ -107,7 +107,7 @@ def write_outputs(results, curve, args):
                          report.fmt(sn["exact"][name]["away_from_critical"]),
                          report.fmt(sn["shots"][name]["all"])])
     table = report.md_table(["Qubits", "Model", "Size", "Test acc. (exact)",
-                             f"Exact, |h-1| >= {FAR}", f"Test acc. ({args.copies} copies)"], rows)
+                             f"Exact, h at least {FAR} from 1", f"Test acc. ({args.copies} copies)"], rows)
     md = (f"# Stage 2: Ising chain phases\n\nOrdered (h < 1) vs disordered (h > 1) ground states, "
           f"h uniform in [0.1, 2]. {args.train} training and {args.test} test states per chain length. "
           f"Exact = infinite shots.\n\n{table}\n")

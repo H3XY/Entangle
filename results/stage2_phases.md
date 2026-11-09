@@ -2,7 +2,7 @@
 
 Ordered (h < 1) vs disordered (h > 1) ground states, h uniform in [0.1, 2]. 200 training and 400 test states per chain length. Exact = infinite shots.
 
-| Qubits | Model | Size | Test acc. (exact) | Exact, |h-1| >= 0.2 | Test acc. (256 copies) |
+| Qubits | Model | Size | Test acc. (exact) | Exact, h at least 0.2 from 1 | Test acc. (256 copies) |
 |---|---|---|---|---|---|
 | 4 | QCNN | 24 weights | 0.998 | 1.000 | 0.968 |
 | 4 | QNN (generic ansatz) | 32 weights | 1.000 | 1.000 | 0.965 |
