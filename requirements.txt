@@ -1,0 +1,10 @@
+# Python 3.11+ (developed on 3.12)
+qiskit>=1.4,<2            # Qiskit 1.x, as in the AGI project
+qiskit-aer>=0.17
+qiskit-machine-learning>=0.8
+qiskit-ibm-runtime>=0.40
+numpy
+scipy
+scikit-learn
+matplotlib
+pytest

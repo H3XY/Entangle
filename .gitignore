@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+
+# Credentials: never commit IBM Quantum tokens
+.env
+*.env
+qiskit-ibm.json
+
+# macOS
+.DS_Store
