@@ -84,7 +84,7 @@ def get_backend(args, min_qubits):
     return backend
 
 
-def run_circuits(backend, circuits, shots, seed=None):
+def run_circuits(backend, circuits, shots, seed=None, simulator=False):
     """Transpile for the backend and run with SamplerV2; returns counts per circuit."""
     from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
     from qiskit_ibm_runtime import SamplerV2
@@ -96,8 +96,8 @@ def run_circuits(backend, circuits, shots, seed=None):
                                       translation_method="translator")
     isa = pm.run(circuits)
     sampler = SamplerV2(mode=backend)
-    if seed is not None and hasattr(backend, "refresh"):  # fake backends: reproducible noise sampling
-        sampler.options.simulator.seed_simulator = seed
+    if seed is not None and simulator:  # fake backends only: reproducible noise sampling
+        sampler.options.simulator.seed_simulator = seed  # (real devices reject this option)
     job = sampler.run(isa, shots=shots)
     print(f"    job {job.job_id()}: {len(isa)} circuits x {shots} shots", flush=True)
     return [r.data.meas.get_counts() for r in job.result()]
@@ -164,7 +164,7 @@ def run_task(spec, backend, args, rng):
         model._weights = clf.weights
         shots = args.copies // model.copies
         circuits = [model_circuit(model, both.circuit(i), n) for i in range(len(both.y))]
-        counts = run_circuits(backend, circuits, shots, args.seed)
+        counts = run_circuits(backend, circuits, shots, args.seed, simulator=args.fake)
         p_all = np.array([p_from_counts(c, model.readout) for c in counts])
         p_dev = p_all[:nt]
         p_ideal = rng.binomial(shots, np.clip(clf.raw_proba(test.states), 0, 1)) / shots
@@ -186,7 +186,7 @@ def run_task(spec, backend, args, rng):
     Xtr = feats(fixed_settings_snapshots(train.states, n, settings, per, rng))
     Xte_ideal = feats(fixed_settings_snapshots(test.states, n, settings, per, rng))
     circuits = [measurement_circuit(both.circuit(i), s) for i in range(len(both.y)) for s in settings]
-    counts = run_circuits(backend, circuits, per, args.seed)
+    counts = run_circuits(backend, circuits, per, args.seed, simulator=args.fake)
     snaps = [snapshots_from_counts(list(zip(settings, counts[i * len(settings):(i + 1) * len(settings)])), n)
              for i in range(len(both.y))]
     X_dev = feats(snaps)
