@@ -4,15 +4,11 @@ Local noisy simulation of the device (fake backend). 40 test states per task (ba
 
 | Task | Model | Shots per state | Ideal | fake_marrakesh | fake_marrakesh, recalibrated |
 |---|---|---|---|---|---|
-| entanglement, 2 qubits | QNN 2-copy | 256 | 1.000 | 1.000 | 0.950 |
+| entanglement, 2 qubits | QNN 2-copy | 256 | 1.000 | 0.950 | 0.975 |
 | entanglement, 2 qubits | Logistic regression (snapshots) | 504 | 1.000 | 1.000 | 1.000 |
-| entanglement, 2 qubits | SVM (RBF) (snapshots) | 504 | 0.975 | 1.000 | 1.000 |
-| entanglement, 2 qubits | MLP (snapshots) | 504 | 0.975 | 1.000 | 1.000 |
-| entanglement, 3 qubits | QNN 2-copy | 256 | 1.000 | 1.000 | 0.975 |
-| entanglement, 3 qubits | Logistic regression (snapshots) | 486 | 1.000 | 1.000 | 1.000 |
-| entanglement, 3 qubits | SVM (RBF) (snapshots) | 486 | 0.975 | 1.000 | 1.000 |
-| entanglement, 3 qubits | MLP (snapshots) | 486 | 0.975 | 1.000 | 1.000 |
-| Ising phases, 4 qubits | QCNN | 512 | 0.925 | 0.950 | 0.975 |
-| Ising phases, 4 qubits | Logistic regression (snapshots) | 512 | 1.000 | 0.950 | 0.975 |
-| Ising phases, 4 qubits | SVM (RBF) (snapshots) | 512 | 0.975 | 0.975 | 0.900 |
-| Ising phases, 4 qubits | MLP (snapshots) | 512 | 1.000 | 0.975 | 0.900 |
+| entanglement, 2 qubits | SVM (RBF) (snapshots) | 504 | 0.975 | 0.975 | 1.000 |
+| entanglement, 2 qubits | MLP (snapshots) | 504 | 0.975 | 0.975 | 1.000 |
+| Ising phases, 4 qubits | QCNN | 512 | 0.950 | 0.975 | 0.950 |
+| Ising phases, 4 qubits | Logistic regression (snapshots) | 512 | 0.975 | 0.975 | 1.000 |
+| Ising phases, 4 qubits | SVM (RBF) (snapshots) | 512 | 0.950 | 0.950 | 0.975 |
+| Ising phases, 4 qubits | MLP (snapshots) | 512 | 0.975 | 0.975 | 1.000 |

@@ -9,7 +9,7 @@
 | QNN 2-copy (parity, shared) | device recalibrated | 1.000 ± 0.000 | 1.000 [0.94, 1.00], 1.000 [0.94, 1.00] |
 | Logistic regression (classical shadows) | ideal | 1.000 ± 0.000 | 1.000 [0.94, 1.00], 1.000 [0.94, 1.00] |
 | Logistic regression (classical shadows) | device | 1.000 ± 0.000 | 1.000 [0.94, 1.00], 1.000 [0.94, 1.00] |
-| Logistic regression (classical shadows) | device recalibrated | 1.000 ± 0.000 | 1.000 [0.94, 1.00], 1.000 [0.94, 1.00] |
+| Logistic regression (classical shadows) | device recalibrated | 0.992 ± 0.012 | 1.000 [0.94, 1.00], 0.983 [0.91, 1.00] |
 | SVM (RBF) (classical shadows) | ideal | 1.000 ± 0.000 | 1.000 [0.94, 1.00], 1.000 [0.94, 1.00] |
 | SVM (RBF) (classical shadows) | device | 1.000 ± 0.000 | 1.000 [0.94, 1.00], 1.000 [0.94, 1.00] |
 | SVM (RBF) (classical shadows) | device recalibrated | 1.000 ± 0.000 | 1.000 [0.94, 1.00], 1.000 [0.94, 1.00] |
@@ -23,8 +23,8 @@ Mean shift = mean over test states of (device P(class 1) - exact P(class 1)) for
 
 | Run | Job ID | Submitted (UTC) | Quantum s | Mean shift | By class | Physical qubits |
 |---|---|---|---|---|---|---|
-| run 1 | b795639e-0332-4008-9d14-8f5c223725ed | 2026-11-09T16:26:29 | – | +0.0151 | +0.0216 / +0.0086 | 14 12 13 18 10 11 |
-| run 2 | d2dca310-06fc-4f98-b625-550be4540516 | 2026-11-09T16:26:50 | – | +0.0166 | +0.0228 / +0.0104 | 14 12 13 18 10 11 |
+| run 1 | dbp0rd0ou4as73csr3t0 | 2026-11-09T18:15:15 | 36 | +0.0218 | +0.0300 / +0.0136 | 4 6 5 8 17 7 |
+| run 2 | dbp0s1lt7fqc7388jap0 | 2026-11-09T18:16:36 | 36 | +0.0194 | +0.0298 / +0.0089 | 4 6 5 8 17 7 |
 
 Two-qubit gates per transpiled circuit: shadow (prep only) pure 7.0, mixed 7.0; QNN circuit mean 19.0.
 
@@ -32,7 +32,7 @@ Two-qubit gates per transpiled circuit: shadow (prep only) pure 7.0, mixed 7.0; 
 
 | Run | Model | 16 | 32 | 64 | 128 | 256 | 512 | 1024 |
 |---|---|---|---|---|---|---|---|---|
-| run 1 | QNN 2-copy | 0.837 | 0.914 | 0.973 | 0.991 | 1.000 | 1.000 | 1.000 |
-| run 1 | Classical shadows (logistic regression) | – | 0.685 | 0.827 | 0.918 | 0.971 | 0.995 | 1.000 |
-| run 2 | QNN 2-copy | 0.839 | 0.902 | 0.958 | 0.993 | 1.000 | 1.000 | 1.000 |
-| run 2 | Classical shadows (logistic regression) | – | 0.657 | 0.800 | 0.903 | 0.957 | 0.980 | 1.000 |
+| run 1 | QNN 2-copy | 0.794 | 0.902 | 0.951 | 0.991 | 1.000 | 1.000 | 1.000 |
+| run 1 | Classical shadows (logistic regression) | – | 0.672 | 0.826 | 0.913 | 0.970 | 0.990 | 1.000 |
+| run 2 | QNN 2-copy | 0.804 | 0.902 | 0.948 | 0.993 | 1.000 | 1.000 | 1.000 |
+| run 2 | Classical shadows (logistic regression) | – | 0.687 | 0.805 | 0.920 | 0.965 | 0.984 | 0.983 |

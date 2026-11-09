@@ -33,6 +33,7 @@ from entangle.sim import CompiledCircuit
 from entangle.states import make_purity_data
 
 MODELS = {"per-pair blocks": False, "shared block": True}
+BOOT = 500   # bootstrap replicates over the random draws
 
 
 def gradient_stats(n, shared, states, y, draws, rng):
@@ -49,7 +50,9 @@ def gradient_stats(n, shared, states, y, draws, rng):
         signals.append(float(row_w @ p_rows))
     G = np.array(grads)
     norms = np.linalg.norm(G, axis=1)
-    return {"weights": model.num_weights,
+    boot_rng = np.random.default_rng(len(G) + n)
+    boot = [float(np.mean(np.var(G[boot_rng.integers(0, len(G), len(G))], axis=0))) for _ in range(BOOT)]
+    return {"weights": model.num_weights, "grad_var_mean_boot": boot,
             "grad_var_mean": float(np.mean(np.var(G, axis=0))),
             "grad_var_first": float(np.var(G[:, 0])),
             "signal_var": float(np.var(signals)),
@@ -77,12 +80,21 @@ def main():
                       f"Var[D] {st['signal_var']:.2e}   |grad|<1e-3: {st['frac_small_grad']:.2f}", flush=True)
 
     summary = {}
+    ns = np.array(args.qubits)
     for name in MODELS:
-        ns = np.array(args.qubits)
-        v = np.array([[s["grad_var_mean"] for s in res[name][str(n)]] for n in args.qubits])
+        v = np.array([[s["grad_var_mean"] for s in res[name][str(n)]] for n in args.qubits])   # (n, seed)
         slope, _ = np.polyfit(ns, np.log2(v.mean(axis=1)), 1)
-        summary[name] = {"log2_slope_per_qubit": float(slope),
-                         "decay_factor_per_qubit": float(2 ** -slope)}
+        per_seed = [float(np.polyfit(ns, np.log2(v[:, k]), 1)[0]) for k in range(v.shape[1])]
+        # bootstrap over draws: resample draws within every (n, seed), average over seeds, refit
+        B = np.array([[s["grad_var_mean_boot"] for s in res[name][str(n)]] for n in args.qubits])  # (n, seed, BOOT)
+        boot_slopes = [np.polyfit(ns, np.log2(B[:, :, b].mean(axis=1)), 1)[0] for b in range(B.shape[2])]
+        k = len(per_seed)
+        t = {2: 12.71, 3: 4.30, 4: 3.18, 5: 2.78}.get(k, 2.0)
+        half = t * np.std(per_seed, ddof=1) / np.sqrt(k) if k > 1 else float("nan")
+        summary[name] = {"log2_slope_per_qubit": float(slope), "decay_factor_per_qubit": float(2 ** -slope),
+                         "per_seed_slopes": per_seed,
+                         "seed_t_ci95": [float(np.mean(per_seed) - half), float(np.mean(per_seed) + half)],
+                         "draw_bootstrap_ci95": np.percentile(boot_slopes, [2.5, 97.5]).tolist()}
     report.save_json("review_gradients.json", {"settings": vars(args), "per_seed": res, "summary": summary})
 
     def ms(name, n, key):
@@ -100,9 +112,15 @@ def main():
         report.md_table(["Qubits", "Model", "Weights", "Var[dD/dw], mean over weights", "Var[D]",
                          "Fraction of starts with gradient norm < 1e-3"], rows), "",
         "Fitted decay of the gradient variance (log2-linear fit over n):", "",
-        report.md_table(["Model", "log2 slope per qubit", "variance shrinks by a factor of, per qubit"],
-                        [[k, f"{v['log2_slope_per_qubit']:.2f}", f"{v['decay_factor_per_qubit']:.2f}"]
-                         for k, v in summary.items()]), ""])
+        report.md_table(["Model", "log2 slope per qubit", "shrink factor per qubit", "Per-seed slopes",
+                         "95% CI over seeds (t)", "95% CI, bootstrap over draws"],
+                        [[k, f"{v['log2_slope_per_qubit']:.2f}", f"{v['decay_factor_per_qubit']:.2f}",
+                          ", ".join(f"{x:.2f}" for x in v["per_seed_slopes"]),
+                          f"[{v['seed_t_ci95'][0]:.2f}, {v['seed_t_ci95'][1]:.2f}]",
+                          f"[{v['draw_bootstrap_ci95'][0]:.2f}, {v['draw_bootstrap_ci95'][1]:.2f}]"]
+                         for k, v in summary.items()]), "",
+        "The fit is over n = " + ", ".join(map(str, args.qubits)) + " only: it describes an exponential-like decay "
+        "over the measured range and does not establish the asymptotic rate.", ""])
     report.save_text("review_gradients.md", md)
 
     fig, axes = report.axes_grid(1, "Gradient variance at random initialisation, stage 5 parity model",

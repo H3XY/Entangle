@@ -31,8 +31,10 @@ from mixed ones at 90% accuracy, the best single-copy classical method needs 128
 copies of each state at 2 qubits and 4,096 at 6 qubits. That is roughly double
 per added qubit, as theory predicts. The two-copy QNN needs 16–32 copies at
 every size (16–64 per seed). **On real hardware** (stage 7, `ibm_marrakesh`, 2
-qubits, two independent runs), the two-copy test needs 64 copies for 90% and
-classical shadows 128: the advantage survives noise but halves. In every stage
+qubits, two independent runs), the two-copy test needs 45–53 copies for 90% and
+classical shadows with the same readout flexibility 117–121: a ratio of 2.2–2.7,
+with every 95% interval above 1. That is smaller than the ≈4× in noise-free
+simulation at this size, and it is a preliminary 2-qubit illustration. In every stage
 the advantage comes from measuring two copies together, not from the trainable
 circuit.
 
@@ -272,6 +274,23 @@ median when the mean only just crosses 90%: at 5 qubits the mean is 0.901 at
 1,024 copies. See
 [results/review_seeds_stage5.md](results/review_seeds_stage5.md).
 
+**Model selection without the test set.** Picking the best learner on the test set
+flatters the classical side. [review_selection.py](review_selection.py) instead
+chooses the learner *and* its hyperparameters on a 50-state validation split of
+the training states. The grid covers logistic regression (5 values of C), RBF SVM
+(4 C × 3 γ) and MLP (3 α). The chosen model is then evaluated once on test.
+These are copies for 90%, grid definition, with per seed in brackets, on fresh
+snapshot draws:
+
+| Qubits | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|
+| Validated selection | 128 (128, 128, 128) | 256 (256, 256, 256) | 512 (512, 1024, 512) | 2048 (2048, 2048, 1024) | 4096 (4096, 4096, 4096) |
+| Old rule (best on test), same draws | 128 | 256 | 512 | 1024 | 4096 |
+
+Only n = 5 changes, from 1,024 to 2,048, so the honest classical threshold is the
+same or higher. All three learners' curves are in
+[results/review_selection.md](results/review_selection.md).
+
 **Training: a measured barren plateau.** With a separate trainable block per
 pair, training from a random start works up to 4 qubits. At 5 qubits it failed
 in one of three seeds: 0.555, 1.000 and 1.000, so 0.85 ± 0.26. We measured the
@@ -289,11 +308,17 @@ The method:
 | Shared block: Var[∂D/∂w] | 2.6e-3 | 1.2e-3 | 5.6e-4 | 3.5e-4 | 2.2e-4 | 1.6e-4 |
 
 - **Per-pair blocks:** the gradient variance falls by a factor of 3.9 per added
-  qubit, close to 4ⁿ. That is the exponential decay that defines a barren plateau
-  for a global readout on 2n qubits.
-- **Shared block:** the variance also falls, but by a factor of only 1.7 per
-  qubit, with 8 weights at every size. Over n = 2–7 the shared model keeps
-  gradients more than 100 times larger at 7 qubits.
+  qubit. The log2 slope is −1.97, with per-seed slopes −1.95, −1.94 and −2.01.
+  Its 95% interval is [−2.06, −1.87] over seeds and [−1.98, −1.95] by bootstrap
+  over draws.
+- **Shared block:** the variance falls by a factor of only 1.7 per qubit, with
+  8 weights at every size. The slope is −0.80, with per-seed slopes −1.05, −0.76
+  and −0.79. Its interval is [−1.26, −0.47] over seeds and [−1.01, −0.69] by
+  bootstrap. At 7 qubits the shared model's gradients are more than 100 times
+  larger.
+- **What this does and doesn't show.** This is exponential-like decay over the
+  measured range (n = 2–7), consistent with a barren-plateau mechanism for the
+  global parity readout. Six sizes do not establish the asymptotic rate.
 - **No starting point had a gradient norm below 10⁻³** at these sizes. The
   failure at 5 qubits is small gradients plus a rugged landscape, not exactly
   flat starts.
@@ -328,8 +353,12 @@ comparison into a hardware result.
 - **Runs.** Two independent runs on the same states and the same physical
   qubits: 4, 6, 5 for copy 1 and 8, 17, 7 for copy 2 (`--layout`).
 - **Records.** A calibration snapshot of those qubits is saved with each run.
-- **Comparison.** FakeMarrakesh, the noise model of the same device, run the
-  same way.
+- **Comparison.** FakeMarrakesh, the noise model of the same device, running
+  the *identical* transpiled circuits. Those are the ISA circuits of the real jobs,
+  downloaded from IBM along with the raw counts
+  ([fetch_ibm_results.py](fetch_ibm_results.py), `results/ibm_raw/`). Its
+  per-qubit calibration is compared with the real device's in
+  [results/review_calibration.md](results/review_calibration.md).
 
 At 1,024 copies, every model is at 0.98–1.00 on the device, and 1.00 after
 recalibration. So the comparison is copies needed. We subsample the device
@@ -341,30 +370,67 @@ counts to fewer shots (20 resamples per point, readout recalibrated):
 |---|---|---|---|---|---|---|
 | QNN 2-copy, ibm_marrakesh | 0.77 | 0.86 | 0.93 | 0.98 | 1.00 | 1.00 |
 | Classical shadows, ibm_marrakesh | – | 0.65 | 0.79 | 0.91 | 0.96 | 1.00 |
-| QNN 2-copy, FakeMarrakesh | 0.84 | 0.91 | 0.97 | 0.99 | 1.00 | 1.00 |
-| Classical shadows, FakeMarrakesh | – | 0.67 | 0.81 | 0.91 | 0.96 | 1.00 |
+| QNN 2-copy, FakeMarrakesh | 0.80 | 0.90 | 0.95 | 0.99 | 1.00 | 1.00 |
+| Classical shadows, FakeMarrakesh | – | 0.68 | 0.82 | 0.92 | 0.97 | 0.99 |
 
 These are means of 2 runs; the run-to-run std is at most 0.03. Classical shadows
 need at least 18 copies, 2 per basis setting.
 
+**Copy accounting.** "c copies" means c state preparations for both methods.
+- The QNN uses c/2 shots of a circuit that holds 2 copies.
+- Shadows use ⌊c/9⌋ shots in each of the 9 bases.
+- On the device each state got 1,024 preparations for the QNN and 1,017 for
+  shadows.
+- Smaller c are drawn **without replacement** from those shots.
+
+**Recalibration.** The 20 calibration states are drawn independently of the 200
+training states (seed 2 vs 0) and of the test states (seed 1). None coincides
+with any of them: the smallest ‖ρ − ρ′‖ is 0.32. They are prepared in the same
+job as the test states. What gets refitted on them:
+- **QNN:** a logistic regression on its single output p (2 parameters).
+- **Shadows, equal flexibility:** a logistic regression on the single global-purity
+  estimate (2 parameters).
+- **Shadows, 3 features:** global and both local purities (4 parameters).
+
+**Results** ([review_purity_hw.py](review_purity_hw.py),
+[results/review_purity_hw.md](results/review_purity_hw.md)). That file gives, per
+run and per copy count:
+- accuracy before and after recalibration
+- a 95% bootstrap interval over the 60 test states
+- uncertainty over which states calibrate, by bootstrapping the 20 calibration
+  states and by re-splitting all 80 device states 20/60
+
+Copies for 90%, from log2-linear interpolation of the recalibrated curve, with
+bootstrap 95% intervals:
+
+| Device, run | QNN 2-copy | Shadows, global purity (2 params) | Ratio | Shadows, 3 features (4 params) |
+|---|---|---|---|---|
+| ibm_marrakesh, run 1 | 45 [33, 56] | 121 [102, 157] | 2.7 [2.0, 4.0] | 163 [126, 201] |
+| ibm_marrakesh, run 2 | 53 [42, 69] | 117 [103, 138] | 2.2 [1.6, 2.9] | 119 [105, 143] |
+| FakeMarrakesh, run 1 | 35 [29, 42] | 112 [98, 134] | 3.2 [2.6, 4.2] | 121 [104, 153] |
+| FakeMarrakesh, run 2 | 40 [32, 47] | 110 [95, 134] | 2.7 [2.2, 3.6] | 125 [104, 160] |
+
 **Findings:**
-- **Copies needed for 90% on hardware:** 64 for the 2-copy QNN and 128 for
-  classical shadows.
-- **Noise hits the quantum side harder.** In noise-free simulation at this size
-  it is 32 vs 128 (stage 5). The 6-qubit two-copy circuit has about 19 CZ gates
-  after routing, against 7 for a shadow circuit. So the advantage survives on
-  hardware, but halves.
-- **FakeMarrakesh understates the noise here.** The QNN's mean output shift,
-  device minus exact P(class 1), is +0.038 and +0.041 on the real device,
-  against +0.015 and +0.017 on FakeMarrakesh.
+- **On the device the 2-copy test needs 2.2–2.7× fewer copies** than classical
+  shadows with equal readout flexibility. Every interval excludes 1.
+- **Noise costs the QNN more.** It needs about 45–53 copies on the real device,
+  35–40 on FakeMarrakesh and about 32 in noise-free simulation (stage 5). The
+  6-qubit two-copy circuit has about 19 CZ after routing, against 7 for a shadow
+  circuit, which is a plausible explanation; we did not isolate the cause. Treat
+  this as a preliminary 2-qubit illustration with 2 runs.
+- **Recalibration barely matters here:** before and after agree within about
+  0.03 at every copy count.
+- **FakeMarrakesh understates the noise for these compiled circuits.** On
+  identical circuits and qubits, the QNN's mean output shift (device minus exact
+  P(class 1)) is +0.038 and +0.041 on the real device, against +0.022 and +0.019
+  on FakeMarrakesh.
 - **Pure states shift more** (+0.05 to +0.06) than mixed ones (+0.02): noise
   makes everything look more mixed.
 - **Both methods track the true purity.** The QNN's 1 − 2P correlates with the
   true Tr ρ² at r = 0.986 in both runs, and the shadow estimate at r = 0.975 and
   0.981. Both read low, by 0.09–0.10 for the QNN and 0.06–0.07 for shadows.
 
-At 2 qubits, single-copy shadows are cheap, so the gap is a constant factor of
-2. The exponential gap in stage 5 needs more qubits, which means deeper
+At 2 qubits, single-copy shadows are cheap, so the gap is a constant factor. The exponential gap in stage 5 needs more qubits, which means deeper
 preparation circuits than this device can run cleanly. Results:
 [results/stage7_hardware_purity_ibm.md](results/stage7_hardware_purity_ibm.md),
 [results/review_hardware.md](results/review_hardware.md).
@@ -485,10 +551,13 @@ python stage4_hardware.py --backend ibm_marrakesh --qubits-entanglement 2 --stat
 
 | Task | Model | Ideal | ibm_marrakesh | Recalibrated | FakeMarrakesh | FakeMarrakesh, recalibrated |
 |---|---|---|---|---|---|---|
-| Entanglement, 2 qubits | QNN 2-copy | 1.000 | 0.800 ± 0.035 | 0.988 ± 0.018 | 1.000 | 0.975 ± 0.035 |
-| Entanglement, 2 qubits | Classical snapshots (best) | 1.000 | 0.938 ± 0.018 | 0.975 ± 0.000 | 1.000 | 0.963 ± 0.053 |
-| Ising, 4 qubits | QCNN | 0.950 | 0.925 ± 0.035 | 0.925 ± 0.035 | 0.975 ± 0.035 | 0.988 ± 0.018 |
-| Ising, 4 qubits | Classical snapshots (best) | 0.975 | 0.962 ± 0.018 | 0.962 ± 0.018 | 0.975 | 0.962 ± 0.018 |
+| Entanglement, 2 qubits | QNN 2-copy | 1.000 | 0.800 ± 0.035 | 0.988 ± 0.018 | 0.962 ± 0.018 | 0.975 ± 0.000 |
+| Entanglement, 2 qubits | Classical snapshots (best) | 1.000 | 0.938 ± 0.018 | 0.975 ± 0.000 | 0.988 ± 0.018 | 1.000 ± 0.000 |
+| Ising, 4 qubits | QCNN | 0.950 | 0.925 ± 0.035 | 0.925 ± 0.035 | 0.988 ± 0.018 | 0.975 ± 0.035 |
+| Ising, 4 qubits | Classical snapshots (best) | 0.975 | 0.962 ± 0.018 | 0.962 ± 0.018 | 0.975 ± 0.000 | 0.950 ± 0.035 |
+
+The FakeMarrakesh columns replay the identical transpiled circuits of the real
+jobs, with the same shots.
 
 Values are mean ± std over 2 runs. With 80 pooled test predictions, the Wilson
 95% interval on 0.95 is about [0.88, 0.98]. So no model ranking inside a task is
@@ -499,9 +568,10 @@ seconds: [results/review_hardware.md](results/review_hardware.md).
   classical snapshots). Its 4-qubit circuit picks up a positive output shift of
   +0.028 and +0.032 per run, which pushes product states over the threshold.
   Sixteen labelled device states restore it to 0.99.
-- **The fake backend understates this.** FakeMarrakesh gives the same circuit a
-  shift of only +0.009 to +0.010. For the 4-qubit QCNN, real and fake agree
-  better: −0.007 to −0.009 real, −0.005 fake.
+- **The fake backend understates this.** Running the identical transpiled
+  circuits on the same qubits, FakeMarrakesh gives the 2-copy circuit a shift of
+  +0.015 to +0.016, against +0.028 to +0.032 on the device. For the 4-qubit QCNN,
+  real and fake agree: −0.007 to −0.009 on both.
 - **Ising behaves as in simulation:** every model scores 0.90–0.98 on the device.
 
 ## Usage
@@ -524,6 +594,9 @@ python stage7_hardware_purity.py --fake  # ~1 min pure vs mixed on the FakeMarra
 python review_seeds.py --stage 1       # ~2 min  5-seed uncertainty (also --stage 2, 5, 6)
 python review_gradients.py             # ~20 min gradient variance vs qubits (barren-plateau check)
 python review_hardware.py              # summary of every hardware run, real vs fake
+python fetch_ibm_results.py --replay FakeMarrakesh  # raw counts + ISA circuits of logged jobs; replay on fake
+python review_purity_hw.py             # ~3 min  stage 7 recalibration, copy accounting, intervals
+python review_selection.py             # ~3 min  stage 5 shadows with validation-based model selection
 python -m pytest -q tests              # correctness checks
 ./security/audit_deps.sh               # pip-audit scan -> results/dependency_audit.md
 ```
@@ -563,7 +636,7 @@ seconds.
 
 ```
 stage1_entanglement.py ... stage7_hardware_purity.py    one CLI per stage
-review_seeds.py, review_gradients.py, review_hardware.py  robustness checks (uncertainty, gradients, hardware)
+review_*.py, fetch_ibm_results.py   robustness checks (uncertainty, gradients, model selection, hardware)
 docs/YANG_MILLS.md       the Millennium problem: statement, known results, what stage 6 does not show
 entangle/
   states.py      product/entangled states, Meyer-Wallach Q, concurrence, Ising ground states, pure/mixed states

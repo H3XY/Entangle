@@ -81,8 +81,40 @@ def stage4_rows(runs, label):
     return rows, shifts
 
 
+def _per_qubit_rows(label, snap):
+    rows = []
+    for q, e in sorted(snap["qubits"].items(), key=lambda kv: int(kv[0])):
+        rows.append([label, q, f"{e['T1_us']:.0f}" if e.get("T1_us") else "–",
+                     f"{e['T2_us']:.0f}" if e.get("T2_us") else "–",
+                     f"{e.get('measure_error', float('nan')):.4f}", f"{e.get('sx_error', float('nan')):.2e}"])
+    return rows
+
+
+def write_calibration():
+    """Per-qubit calibration of the qubits each hardware run used: real device vs FakeMarrakesh."""
+    lines = ["# Calibration of the physical qubits used: ibm_marrakesh vs FakeMarrakesh", "",
+             "Real rows: backend.target read right after each run (9 Nov 2026). FakeMarrakesh rows: the fake "
+             "backend's stored calibration for the same physical qubits (its snapshot date is fixed in "
+             "qiskit-ibm-runtime, not today's). The FakeMarrakesh results replay the identical transpiled circuits.", ""]
+    sources = [("stage 7 (purity)", "stage7_hardware_purity_ibm.json", "stage7_hardware_purity_fakemarrakesh.json"),
+               ("stage 4 (entanglement + Ising)", "stage4_hardware_ibm_run1.json", "stage4_hardware_fakemarrakesh_run1.json")]
+    for title, real_f, fake_f in sources:
+        real, fake = json.load(open(report.path(real_f))), json.load(open(report.path(fake_f)))
+        rs = real["runs"][0]["calibration_snapshot"] if "runs" in real else real["calibration_snapshot"]
+        fs = fake["runs"][0]["calibration_snapshot"] if "runs" in fake else fake["calibration_snapshot"]
+        lines += [f"## {title}", "",
+                  report.md_table(["Source", "Qubit", "T1 (us)", "T2 (us)", "Readout error", "sx error"],
+                                  _per_qubit_rows("ibm_marrakesh", rs) + _per_qubit_rows("FakeMarrakesh", fs)), "",
+                  report.md_table(["Source", "CZ pair", "Error"],
+                                  [["ibm_marrakesh", k, f"{v:.4f}"] for k, v in sorted(rs["two_qubit"].items())]
+                                  + [["FakeMarrakesh", k, f"{v:.4f}"] for k, v in sorted(fs["two_qubit"].items())]), ""]
+    report.save_text("review_calibration.md", "\n".join(lines))
+
+
 def main():
     lines = ["# Hardware summary: ibm_marrakesh vs FakeMarrakesh", "",
+             "FakeMarrakesh rows replay the IDENTICAL transpiled circuits of the real jobs (same physical qubits, "
+             "gates and shots; fetch_ibm_results.py --replay). Per-qubit calibration: review_calibration.md.", "",
              "Every number is test accuracy. Mean ± std over independent runs (same test states, same "
              "transpiler seed); in brackets a Wilson 95% interval for all test predictions pooled over runs. "
              "Each cell: ideal (noise-free simulation, same shots), device, device recalibrated on labelled "
@@ -172,6 +204,7 @@ def main():
                   f"Total billed in this campaign: {total:.0f} s. (The earlier 280-circuit run of 8–9 Nov "
                   "predates the job log.)", ""]
     report.save_text("review_hardware.md", "\n".join(lines))
+    write_calibration()
     print("Wrote results/review_hardware.md")
 
 

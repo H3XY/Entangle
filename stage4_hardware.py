@@ -74,6 +74,8 @@ def run_circuits(backend, circuits, shots, seed=None, simulator=False, label="")
     """Transpile (fixed seed_transpiler) and run in one SamplerV2 job; returns counts per circuit."""
     counts, info = ibm.run_pubs(backend, circuits, shots, seed=seed, simulator=simulator, budget=BUDGET,
                                 label=label)
+    if ibm.REPLAY is not None and info.get("replay_source") != "ibm":
+        info = dict(info, job_id=f"replay of {info['job_id']}", quantum_seconds=None)
     JOBS.append(info)
     return counts
 
@@ -254,12 +256,18 @@ def main():
     p.add_argument("--tag", help="output name suffix (default: 'fake' or 'ibm')")
     p.add_argument("--floor", type=float, default=125.0, help="least quantum seconds the account must keep")
     p.add_argument("--cap", type=float, default=170.0, help="most quantum seconds this run may spend")
+    p.add_argument("--replay", help="no device: recompute from saved counts in results/ibm_raw, either 'ibm' or "
+                                    "a fake backend that replayed the identical circuits (e.g. FakeMarrakesh); "
+                                    "use the original run's settings and --run-label")
     args = p.parse_args()
+    if args.replay:
+        ibm.set_replay(args.replay)
+        args.fake = args.replay != "ibm"   # labels the output as fake / real hardware
     args.tag = args.tag or ("fake" if args.fake else "ibm")
 
     specs = task_specs(args)
     min_qubits = max(m.num_qubits for s in specs for m in s["models"])
-    if not args.fake and not args.yes:
+    if not args.fake and not args.yes and not args.replay:
         n_circ = sum((args.states + args.calibrate) * (len(s["models"]) + len(s["settings"])) for s in specs)
         shots = sum((args.states + args.calibrate) * (sum(args.copies // m.copies for m in s["models"])
                                                        + args.copies // len(s["settings"]) * len(s["settings"]))
@@ -270,9 +278,15 @@ def main():
         if ans.strip().lower() != "y":
             raise SystemExit("Cancelled.")
     global BUDGET
-    backend = ibm.get_backend(args.fake, args.backend_fake, args.backend, min_qubits)
-    BACKEND.append(backend)
-    if not args.fake:
+    if args.replay:  # rebuild circuits only; counts come from results/ibm_raw
+        from qiskit_ibm_runtime import fake_provider
+        backend = getattr(fake_provider, "FakeMarrakesh" if args.replay == "ibm" else args.replay)()
+        if args.replay != "ibm":
+            BACKEND.append(backend)   # calibration snapshot = the fake backend's model of the same qubits
+    else:
+        backend = ibm.get_backend(args.fake, args.backend_fake, args.backend, min_qubits)
+        BACKEND.append(backend)
+    if not args.fake and not args.replay:
         BUDGET = ibm.Budget(floor=args.floor, cap=args.cap)
     rng = np.random.default_rng(args.seed)
     t0 = time.time()
@@ -280,7 +294,7 @@ def main():
     for spec in specs:
         print(f"\n{spec['name']}")
         results.append(run_task(spec, backend, args, rng))
-    write_outputs(results, backend.name, args)
+    write_outputs(results, JOBS[0]["backend"] if args.replay else backend.name, args)
     tag = args.tag
     print(f"\nDone in {time.time() - t0:.0f}s. Results: results/stage4_hardware_{tag}.{{json,md,png}}")
 
