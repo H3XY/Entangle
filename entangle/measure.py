@@ -164,3 +164,34 @@ def exact_features(states, n, paulis, purities=True):
     pur = np.stack([(1 + sum(E[:, idx[((q, b),)]] ** 2 for b in (X, Y, Z) if ((q, b),) in idx)) / 2
                     for q in range(n)], axis=1)
     return np.concatenate([E, pur], axis=1)
+
+
+def fixed_settings_snapshots(states, n, settings, shots_per_setting, rng):
+    """Snapshots from a fixed list of bases, `shots_per_setting` shots each.
+
+    This is how hardware runs measure (one circuit per basis setting), so models
+    that will be tested on hardware are trained on simulated data of the same design.
+    """
+    out = []
+    for psi in states:
+        sets, bits = [], []
+        for setting in settings:
+            p = basis_probs(psi, n, setting)
+            outcome = rng.choice(2 ** n, size=shots_per_setting, p=p / p.sum())
+            sets.append(np.tile(setting, (shots_per_setting, 1)))
+            bits.append(_bits(outcome, n))
+        out.append((np.concatenate(sets), np.concatenate(bits)))
+    return out
+
+
+def measurement_circuit(prep, setting):
+    """prep circuit + basis change so that qubit q is measured in basis setting[q]."""
+    qc = prep.copy()
+    for q, b in enumerate(setting):
+        if b == X:
+            qc.h(q)
+        elif b == Y:
+            qc.sdg(q)
+            qc.h(q)
+    qc.measure_all()
+    return qc
