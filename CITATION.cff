@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite it as below."
+title: "Entangle: quantum machine learning benchmarks on quantum-native data"
+authors:
+  - family-names: Reddy
+    given-names: Vivek
+repository-code: "https://github.com/H3XY/Entangle"
+license: MIT
+date-released: 2026-11-09
+keywords: [quantum machine learning, entanglement, classical shadows, qiskit, IBM Quantum]
