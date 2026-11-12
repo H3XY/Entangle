@@ -1,5 +1,11 @@
 # Entangle
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24148953.svg)](https://doi.org/10.5281/zenodo.24148953)
+
+Archived on Zenodo. The badge's concept DOI always resolves to the latest version.
+To cite the exact code used in the paper, use v1.0.0:
+[10.5281/zenodo.24148954](https://doi.org/10.5281/zenodo.24148954) (commit `c4d3528`).
+
 An honest quantum machine-learning benchmark on data that is **quantum to begin with**.
 
 The [AGI project](https://github.com/H3XY/AGI) squeezed text into 4 rotation angles
