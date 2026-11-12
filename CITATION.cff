@@ -6,5 +6,6 @@ authors:
     given-names: Vivek
 repository-code: "https://github.com/H3XY/Entangle"
 license: MIT
-date-released: 2026-11-09
+version: 1.0.0
+date-released: 2026-11-11
 keywords: [quantum machine learning, entanglement, classical shadows, qiskit, IBM Quantum]
