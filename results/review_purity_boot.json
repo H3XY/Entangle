@@ -1,0 +1,199 @@
+{
+  "settings": {
+    "reps": 1000,
+    "sens_reps": 300
+  },
+  "copies": [
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256,
+    512,
+    1024
+  ],
+  "calibration_budget": "primary: same c as the test states; sensitivity: full 1,024 copies",
+  "stage5_interpolated_n2": {
+    "copies": [
+      2,
+      4,
+      8,
+      16,
+      32,
+      64,
+      128,
+      256,
+      512,
+      1024,
+      2048,
+      4096
+    ],
+    "qnn_threshold": 18.4755725674758,
+    "shadow_threshold": 97.69206581457289,
+    "ratio": 5.287634007432546
+  },
+  "noise_free_same_design": {
+    "replicates": 1000,
+    "qnn_threshold": {
+      "median": 16.0,
+      "ci95": [
+        8.0,
+        40.317473596635956
+      ],
+      "never_reached": 0
+    },
+    "shadow_threshold": {
+      "median": 107.63474115247546,
+      "ci95": [
+        60.40795601162839,
+        181.01933598375626
+      ],
+      "never_reached": 0
+    },
+    "ratio": {
+      "median": 6.245673457245682,
+      "ci95": [
+        2.477464411027519,
+        14.87039626136964
+      ],
+      "one_sided_upper95": 12.704469629023086,
+      "p_ratio_below_1": 0.0
+    }
+  },
+  "jobs": {
+    "run 1": {
+      "replicates": 1000,
+      "qnn_threshold": {
+        "median": 47.55181725238237,
+        "ci95": [
+          24.25146506416638,
+          90.50966799187809
+        ],
+        "never_reached": 0
+      },
+      "shadow_threshold": {
+        "median": 128.0,
+        "ci95": [
+          64.0,
+          256.0
+        ],
+        "never_reached": 0
+      },
+      "ratio": {
+        "median": 2.8884650338148745,
+        "ci95": [
+          1.259921049894873,
+          7.130154734347432
+        ],
+        "one_sided_upper95": 6.498019170849885,
+        "p_ratio_below_1": 0.005,
+        "p_ratio_below_sim": 0.937,
+        "sim_ratio": 6.245673457245682,
+        "p_below_sim_distribution": 0.866251,
+        "log2_ratio_minus_sim_ci95": [
+          -2.833333333333333,
+          0.8427380952380957
+        ]
+      },
+      "calibration_full_budget": {
+        "replicates": 300,
+        "qnn_threshold": {
+          "median": 42.22425314473263,
+          "ci95": [
+            22.053584692147318,
+            80.63494719327187
+          ],
+          "never_reached": 0
+        },
+        "shadow_threshold": {
+          "median": 128.0,
+          "ci95": [
+            61.819925051190125,
+            209.53046216976557
+          ],
+          "never_reached": 0
+        },
+        "ratio": {
+          "median": 3.0933555872416756,
+          "ci95": [
+            1.3195079107728938,
+            6.906431839103753
+          ],
+          "one_sided_upper95": 6.349604207872796,
+          "p_ratio_below_1": 0.0033333333333333335,
+          "p_ratio_below_sim": 0.9466666666666667,
+          "sim_ratio": 6.245673457245682
+        }
+      },
+      "job_id": "dbp0rd0ou4as73csr3t0"
+    },
+    "run 2": {
+      "replicates": 1000,
+      "qnn_threshold": {
+        "median": 54.86361490259666,
+        "ci95": [
+          27.418729397218844,
+          107.72963442621115
+        ],
+        "never_reached": 0
+      },
+      "shadow_threshold": {
+        "median": 128.0,
+        "ci95": [
+          80.2190735134401,
+          256.0
+        ],
+        "never_reached": 0
+      },
+      "ratio": {
+        "median": 2.5379277728426564,
+        "ci95": [
+          1.0637338316646696,
+          6.281863575596078
+        ],
+        "one_sided_upper95": 5.656854249492377,
+        "p_ratio_below_1": 0.017,
+        "p_ratio_below_sim": 0.973,
+        "sim_ratio": 6.245673457245682,
+        "p_below_sim_distribution": 0.901503,
+        "log2_ratio_minus_sim_ci95": [
+          -3.071428571428571,
+          0.6333333333333327
+        ]
+      },
+      "calibration_full_budget": {
+        "replicates": 300,
+        "qnn_threshold": {
+          "median": 48.50293012833276,
+          "ci95": [
+            25.398416831491197,
+            86.13761232847081
+          ],
+          "never_reached": 0
+        },
+        "shadow_threshold": {
+          "median": 128.0,
+          "ci95": [
+            85.25083165799289,
+            256.0
+          ],
+          "never_reached": 0
+        },
+        "ratio": {
+          "median": 2.9719885782738973,
+          "ci95": [
+            1.3195079107728942,
+            7.403353928632342
+          ],
+          "one_sided_upper95": 5.66179825301993,
+          "p_ratio_below_1": 0.0,
+          "p_ratio_below_sim": 0.96,
+          "sim_ratio": 6.245673457245682
+        }
+      },
+      "job_id": "dbp0s1lt7fqc7388jap0"
+    }
+  }
+}

@@ -37,10 +37,12 @@ from mixed ones at 90% accuracy, the best single-copy classical method needs 128
 copies of each state at 2 qubits and 4,096 at 6 qubits. That is roughly double
 per added qubit, as theory predicts. The two-copy QNN needs 16–32 copies at
 every size (16–64 per seed). **On real hardware** (stage 7, `ibm_marrakesh`, 2
-qubits, two independent runs), the two-copy test needs 45–53 copies for 90% and
-classical shadows with the same readout flexibility 117–121: a ratio of 2.2–2.7,
-with every 95% interval above 1. That is smaller than the ≈4× in noise-free
-simulation at this size, and it is a preliminary 2-qubit illustration. In every stage
+qubits, two independent runs), the two-copy test needs about 48–55 copies for 90%
+and classical shadows with the same readout flexibility about 128. That is a ratio
+of about 2.5–2.9, and the hierarchical-bootstrap intervals stay above 1. The
+noise-free ratio for the same setup is about 6. The device point estimates are
+smaller, but with broad uncertainty: the intervals overlap. This is a preliminary
+2-qubit illustration. In every stage
 the advantage comes from measuring two copies together, not from the trainable
 circuit.
 
@@ -417,10 +419,47 @@ bootstrap 95% intervals:
 | FakeMarrakesh, run 2 | 40 [32, 47] | 110 [95, 134] | 2.7 [2.2, 3.6] | 125 [104, 160] |
 
 **Findings:**
-- **On the device the 2-copy test needs 2.2–2.7× fewer copies** than classical
-  shadows with equal readout flexibility. Every interval excludes 1.
-- **Noise costs the QNN more.** It needs about 45–53 copies on the real device,
-  35–40 on FakeMarrakesh and about 32 in noise-free simulation (stage 5). The
+- **On the device the 2-copy test needs fewer copies** than classical shadows with
+  equal readout flexibility. That holds in both runs, under both analyses below.
+
+**Uncertainty, propagated in full** ([review_purity_boot.py](review_purity_boot.py),
+[results/review_purity_boot.md](results/review_purity_boot.md)). The intervals
+above treat the 30 shot subsamples as independent, although they overlap, and they
+keep the calibration fit fixed. The hierarchical bootstrap instead works on each
+job separately, since the two jobs are the only independent runs. Each of its
+1,000 replicates:
+1. resamples the test and calibration states
+2. resamples each state's raw device shots with replacement
+3. subsamples c copies without replacement, for calibration and test states alike
+4. refits the 2-parameter recalibration
+5. re-interpolates the thresholds
+
+The noise-free reference applies the same procedure to the same 80 states, with
+shots drawn from the exact outcome distributions.
+
+| | QNN copies for 90% | Shadow copies for 90% | Ratio | P(ratio < 1) | P(device ratio < noise-free ratio) |
+|---|---|---|---|---|---|
+| Noise-free, same states and design | 16 [8, 40] | 108 [60, 181] | 6.3 [2.5, 14.9] | 0.000 | – |
+| ibm_marrakesh run 1 | 48 [24, 91] | 128 [64, 256] | 2.9 [1.3, 7.1] | 0.005 | 0.87 |
+| ibm_marrakesh run 2 | 55 [27, 108] | 128 [80, 256] | 2.5 [1.1, 6.3] | 0.017 | 0.90 |
+
+Values are medians with 95% intervals. The last column compares each device
+replicate with each noise-free replicate, so it allows for uncertainty on both
+sides. The 95% interval of log2(device ratio / noise-free ratio) is [−2.8, 0.8]
+for run 1 and [−3.1, 0.6] for run 2.
+
+- **Device ratio above 1:** P(ratio < 1) is at most 0.017 per job. So the 2-copy
+  test needs fewer copies on the device too.
+- **Smaller than noise-free, but not significantly:** the device point estimates
+  are below the noise-free ratio, but both intervals include it.
+- **Calibration budget:** the primary analysis calibrates at the same c as the
+  test states. Calibrating on the full 1,024 copies instead gives ratios of 3.1
+  [1.3, 6.9] and 3.0 [1.3, 7.4].
+- **Stage 5 cross-check:** the stage 5 simulation at n = 2, through the same
+  interpolation instead of the power-of-2 grid, gives 18.5 vs 97.7 copies, a
+  ratio of 5.3. The "32 vs 128 = 4" quoted elsewhere is a grid artefact.
+- **Noise costs the QNN more.** It needs about 48–55 copies on the real device,
+  35–40 on FakeMarrakesh and about 16 in noise-free simulation of the same setup. The
   6-qubit two-copy circuit has about 19 CZ after routing, against 7 for a shadow
   circuit, which is a plausible explanation; we did not isolate the cause. Treat
   this as a preliminary 2-qubit illustration with 2 runs.
@@ -603,6 +642,7 @@ python review_hardware.py              # summary of every hardware run, real vs 
 python fetch_ibm_results.py --replay FakeMarrakesh  # raw counts + ISA circuits of logged jobs; replay on fake
 python review_purity_hw.py             # ~3 min  stage 7 recalibration, copy accounting, intervals
 python review_selection.py             # ~3 min  stage 5 shadows with validation-based model selection
+python review_purity_boot.py           # ~6 min  stage 7 thresholds: hierarchical bootstrap per job
 python -m pytest -q tests              # correctness checks
 ./security/audit_deps.sh               # pip-audit scan -> results/dependency_audit.md
 ```
