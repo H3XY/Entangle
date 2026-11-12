@@ -1,0 +1,301 @@
+{
+  "runs": [
+    {
+      "run_label": "pilot",
+      "backend": "ibm_marrakesh",
+      "fake": false,
+      "layout": [
+        4,
+        6,
+        5,
+        8,
+        17,
+        7
+      ],
+      "job": {
+        "job_id": "dbp0r10qtr0c738dj0fg",
+        "backend": "ibm_marrakesh",
+        "simulator": false,
+        "label": "stage7 pilot",
+        "submitted_utc": "2026-11-09T18:14:27.847043+00:00",
+        "finished_utc": "2026-11-09T18:14:40.337600+00:00",
+        "circuits": 80,
+        "total_shots": 3040,
+        "estimated_seconds": 3.8,
+        "quantum_seconds": 3.0,
+        "seed_transpiler": 0,
+        "physical_qubits": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          17
+        ]
+      },
+      "test_states": 4,
+      "calibration_states": 4,
+      "copies": 256,
+      "two_qubit_gates_in_shadow_circuit": {
+        "pure": 7.0,
+        "mixed": 7.0
+      },
+      "two_qubit_gates_in_qnn_circuit": {
+        "mean": 19.0,
+        "min": 19,
+        "max": 19
+      },
+      "calibration_snapshot": {
+        "backend": "ibm_marrakesh",
+        "taken_utc": "2026-11-09T18:14:40.340468+00:00",
+        "qubits": {
+          "4": {
+            "T1_us": 161.2599456316603,
+            "T2_us": 190.2448147049312,
+            "measure_error": 0.0224609375,
+            "sx_error": 0.0003568673632186927,
+            "x_error": 0.0003568673632186927
+          },
+          "5": {
+            "T1_us": 305.3558188198547,
+            "T2_us": 216.2013836579238,
+            "measure_error": 0.0078125,
+            "sx_error": 0.0005742661408456832,
+            "x_error": 0.0005742661408456832
+          },
+          "6": {
+            "T1_us": 174.51805376325024,
+            "T2_us": 113.92956192970344,
+            "measure_error": 0.00048828125,
+            "sx_error": 0.00017833181061772748,
+            "x_error": 0.00017833181061772748
+          },
+          "7": {
+            "T1_us": 262.37320623882204,
+            "T2_us": 200.0138133488174,
+            "measure_error": 0.017578125,
+            "sx_error": 0.00021219394696261814,
+            "x_error": 0.00021219394696261814
+          },
+          "8": {
+            "T1_us": 152.0842536176546,
+            "T2_us": 112.79925017821368,
+            "measure_error": 0.00537109375,
+            "sx_error": 0.00029423767590338603,
+            "x_error": 0.00029423767590338603
+          },
+          "17": {
+            "T1_us": 235.74505481326472,
+            "T2_us": 33.689811535294865,
+            "measure_error": 0.00634765625,
+            "sx_error": 0.00044243782898333684,
+            "x_error": 0.00044243782898333684
+          }
+        },
+        "two_qubit": {
+          "cz 4-5": 0.0021441129385036395,
+          "cz 5-4": 0.0021441129385036395,
+          "cz 5-6": 0.0015979979955591805,
+          "cz 6-5": 0.0015979979955591805,
+          "cz 6-7": 0.0021921829248419122,
+          "cz 7-6": 0.0021921829248419122,
+          "cz 7-8": 0.0027918449880229845,
+          "cz 7-17": 0.002142523404828789,
+          "cz 8-7": 0.0027918449880229845,
+          "cz 17-7": 0.002142523404828789
+        },
+        "properties_last_update": "2026-11-09 11:47:53-06:00"
+      },
+      "test_y": [
+        0,
+        1,
+        0,
+        1
+      ],
+      "true_purity": [
+        1.0,
+        0.5005438891578653,
+        1.0,
+        0.5304321701442356
+      ],
+      "models": {
+        "QNN 2-copy (parity, shared)": {
+          "kind": "quantum",
+          "shots": 128,
+          "exact": 1.0,
+          "ideal": 1.0,
+          "device": 1.0,
+          "device_recalibrated": 1.0,
+          "p_exact": [
+            0.017659268428115233,
+            0.25455380340154504,
+            0.007967063383649754,
+            0.2372028653943184
+          ],
+          "p_device": [
+            0.0546875,
+            0.328125,
+            0.0390625,
+            0.2734375
+          ],
+          "mean_shift_p": 0.04448237484809289,
+          "mean_shift_p_by_class": {
+            "0": 0.034061834094117505,
+            "1": 0.05490291560206828
+          },
+          "purity_from_device": [
+            0.890625,
+            0.34375,
+            0.921875,
+            0.453125
+          ],
+          "ideal_wilson95": [
+            0.5100999795960008,
+            1.0
+          ],
+          "device_wilson95": [
+            0.5100999795960008,
+            1.0
+          ],
+          "device_recalibrated_wilson95": [
+            0.5100999795960008,
+            1.0
+          ]
+        },
+        "Logistic regression (classical shadows)": {
+          "kind": "classical",
+          "shots": 252,
+          "ideal": 1.0,
+          "device": 1.0,
+          "device_recalibrated": 1.0,
+          "ideal_wilson95": [
+            0.5100999795960008,
+            1.0
+          ],
+          "device_wilson95": [
+            0.5100999795960008,
+            1.0
+          ],
+          "device_recalibrated_wilson95": [
+            0.5100999795960008,
+            1.0
+          ]
+        },
+        "SVM (RBF) (classical shadows)": {
+          "kind": "classical",
+          "shots": 252,
+          "ideal": 1.0,
+          "device": 1.0,
+          "device_recalibrated": 0.75,
+          "ideal_wilson95": [
+            0.5100999795960008,
+            1.0
+          ],
+          "device_wilson95": [
+            0.5100999795960008,
+            1.0
+          ],
+          "device_recalibrated_wilson95": [
+            0.3006360524426366,
+            0.9544139373553637
+          ]
+        },
+        "MLP (classical shadows)": {
+          "kind": "classical",
+          "shots": 252,
+          "ideal": 1.0,
+          "device": 1.0,
+          "device_recalibrated": 1.0,
+          "ideal_wilson95": [
+            0.5100999795960008,
+            1.0
+          ],
+          "device_wilson95": [
+            0.5100999795960008,
+            1.0
+          ],
+          "device_recalibrated_wilson95": [
+            0.5100999795960008,
+            1.0
+          ]
+        }
+      },
+      "shadow_purity_from_device": [
+        0.8093340922026179,
+        0.46528173022196917,
+        0.7879908935685828,
+        0.49402390438247
+      ],
+      "device_copies_sweep": {
+        "copies": [
+          16,
+          32,
+          64,
+          128,
+          256
+        ],
+        "QNN 2-copy": [
+          [
+            0.625,
+            0.125
+          ],
+          [
+            0.875,
+            0.125
+          ],
+          [
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ],
+        "Classical shadows (logistic regression)": [
+          null,
+          [
+            0.5,
+            0.0
+          ],
+          [
+            0.875,
+            0.125
+          ],
+          [
+            1.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0
+          ]
+        ]
+      },
+      "settings": {
+        "fake": false,
+        "backend_fake": "FakeMarrakesh",
+        "backend": "ibm_marrakesh",
+        "test": 4,
+        "calibrate": 4,
+        "copies": 256,
+        "train": 200,
+        "maxiter": 150,
+        "restarts": 2,
+        "resamples": 2,
+        "layout": null,
+        "run_label": "pilot",
+        "tag": "ibm_pilot",
+        "new": true,
+        "floor": 125.0,
+        "cap": 10.0,
+        "seed": 0,
+        "yes": true
+      }
+    }
+  ]
+}

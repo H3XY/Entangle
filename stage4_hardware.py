@@ -24,15 +24,23 @@ Tasks:
 Usage:
     python stage4_hardware.py --fake                     # FakeTorino noise model, no account (~1 min)
     python stage4_hardware.py --fake --backend-fake FakeManilaV2
+    python stage4_hardware.py --fake --backend-fake FakeMarrakesh --tag fakemarrakesh   # same device as the real runs
     python stage4_hardware.py                            # real device: least busy (asks first)
     python stage4_hardware.py --backend ibm_torino --states 10 --copies 512
+
+    python stage4_hardware.py --backend ibm_marrakesh --states 40 --calibrate 16 --skip-one-copy \
+        --tag ibm_run1 --run-label "run 1"
 
 Credentials for real devices, checked in order (never commit them):
     1. IBM_QUANTUM_TOKEN environment variable (plus optional IBM_QUANTUM_INSTANCE, a CRN)
     2. an account saved with QiskitRuntimeService.save_account(...)
+
+Every job is checked against the account's remaining quantum time first (`--floor`,
+`--cap`; see entangle/ibm.py) and logged to results/ibm_jobs.json. Transpilation uses a
+fixed seed_transpiler, so repeat runs pick the same physical qubits while the device's
+error rates are unchanged; the qubits used and their calibration are saved with the results.
 """
 import argparse
-import os
 import time
 import warnings
 from itertools import product
@@ -40,7 +48,7 @@ from itertools import product
 import numpy as np
 from qiskit import QuantumCircuit
 
-from entangle import report
+from entangle import ibm, report
 from entangle.circuits import one_copy_model, qcnn_model, two_copy_model
 from sklearn.linear_model import LogisticRegression
 
@@ -54,53 +62,22 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 # --------------------------------------------------------------------------- #
-# Backend and credentials
+# Device access (credentials, budget guard and job log live in entangle/ibm.py)
 # --------------------------------------------------------------------------- #
 
-def get_service():
-    from qiskit_ibm_runtime import QiskitRuntimeService
-    token = os.environ.get("IBM_QUANTUM_TOKEN")
-    instance = os.environ.get("IBM_QUANTUM_INSTANCE")
-    if token:
-        return QiskitRuntimeService(channel="ibm_quantum_platform", token=token, instance=instance)
-    try:
-        return QiskitRuntimeService()  # an account saved earlier
-    except Exception as e:
-        raise SystemExit("No IBM Quantum credentials. Set IBM_QUANTUM_TOKEN or save an account with "
-                         "QiskitRuntimeService.save_account(...); or use --fake.\n"
-                         f"Details: {e}")
+BACKEND = []
+JOBS = []          # job records of this run, saved with the results
+BUDGET = None      # ibm.Budget on real devices
 
 
-def get_backend(args, min_qubits):
-    if args.fake:
-        from qiskit_ibm_runtime import fake_provider
-        backend = getattr(fake_provider, args.backend_fake)()
-        print(f"Using local fake backend {backend.name} (simulated IBM noise, no account needed)")
-        return backend
-    service = get_service()
-    backend = (service.backend(args.backend) if args.backend else
-               service.least_busy(operational=True, simulator=False, min_num_qubits=min_qubits))
-    print("Selected IBM Quantum backend:", backend.name)
-    return backend
-
-
-def run_circuits(backend, circuits, shots, seed=None, simulator=False):
-    """Transpile for the backend and run with SamplerV2; returns counts per circuit."""
-    from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
-    from qiskit_ibm_runtime import SamplerV2
-    # translation_method="translator": Qiskit's standard basis translation. Real IBM backends
-    # otherwise ask for qiskit-ibm-runtime's own plugin (e.g. "ibm_dynamic_circuits"), which
-    # fails to import against Qiskit 1.x. Our circuits use no dynamic or fractional gates,
-    # so the standard translation is all they need.
-    pm = generate_preset_pass_manager(backend=backend, optimization_level=1, seed_transpiler=seed,
-                                      translation_method="translator")
-    isa = pm.run(circuits)
-    sampler = SamplerV2(mode=backend)
-    if seed is not None and simulator:  # fake backends only: reproducible noise sampling
-        sampler.options.simulator.seed_simulator = seed  # (real devices reject this option)
-    job = sampler.run(isa, shots=shots)
-    print(f"    job {job.job_id()}: {len(isa)} circuits x {shots} shots", flush=True)
-    return [r.data.meas.get_counts() for r in job.result()]
+def run_circuits(backend, circuits, shots, seed=None, simulator=False, label=""):
+    """Transpile (fixed seed_transpiler) and run in one SamplerV2 job; returns counts per circuit."""
+    counts, info = ibm.run_pubs(backend, circuits, shots, seed=seed, simulator=simulator, budget=BUDGET,
+                                label=label)
+    if ibm.REPLAY is not None and info.get("replay_source") != "ibm":
+        info = dict(info, job_id=f"replay of {info['job_id']}", quantum_seconds=None)
+    JOBS.append(info)
+    return counts
 
 
 # --------------------------------------------------------------------------- #
@@ -114,7 +91,7 @@ def task_specs(args):
             specs.append(dict(
                 name=f"entanglement, {n} qubits", n=n,
                 data=lambda N, seed, n=n: make_entanglement_data(n, N, seed=seed),
-                models=[one_copy_model(n), two_copy_model(n)],
+                models=([] if args.skip_one_copy else [one_copy_model(n)]) + [two_copy_model(n)],
                 settings=[list(s) for s in product(range(3), repeat=n)],
                 paulis=all_paulis(n), purities=True, purity_only=True))
     if args.task in ("phases", "both"):
@@ -164,7 +141,8 @@ def run_task(spec, backend, args, rng):
         model._weights = clf.weights
         shots = args.copies // model.copies
         circuits = [model_circuit(model, both.circuit(i), n) for i in range(len(both.y))]
-        counts = run_circuits(backend, circuits, shots, args.seed, simulator=args.fake)
+        counts = run_circuits(backend, circuits, shots, args.seed, simulator=args.fake,
+                              label=f"stage4 {args.run_label} {spec['name']} {model.name}")
         p_all = np.array([p_from_counts(c, model.readout) for c in counts])
         p_dev = p_all[:nt]
         p_ideal = rng.binomial(shots, np.clip(clf.raw_proba(test.states), 0, 1)) / shots
@@ -186,7 +164,8 @@ def run_task(spec, backend, args, rng):
     Xtr = feats(fixed_settings_snapshots(train.states, n, settings, per, rng))
     Xte_ideal = feats(fixed_settings_snapshots(test.states, n, settings, per, rng))
     circuits = [measurement_circuit(both.circuit(i), s) for i in range(len(both.y)) for s in settings]
-    counts = run_circuits(backend, circuits, per, args.seed, simulator=args.fake)
+    counts = run_circuits(backend, circuits, per, args.seed, simulator=args.fake,
+                          label=f"stage4 {args.run_label} {spec['name']} snapshots")
     snaps = [snapshots_from_counts(list(zip(settings, counts[i * len(settings):(i + 1) * len(settings)])), n)
              for i in range(len(both.y))]
     X_dev = feats(snaps)
@@ -208,9 +187,12 @@ def run_task(spec, backend, args, rng):
 
 
 def write_outputs(results, backend_name, args):
-    tag = "fake" if args.fake else "ibm"
-    report.save_json(f"stage4_hardware_{tag}.json", {"settings": vars(args), "backend": backend_name,
-                                                      "results": results})
+    tag = args.tag
+    qubits = sorted({q for j in JOBS for q in j["physical_qubits"]})
+    report.save_json(f"stage4_hardware_{tag}.json", {
+        "settings": vars(args), "backend": backend_name, "results": results,
+        "jobs": [{k: v for k, v in j.items() if k != "two_qubit_gates"} for j in JOBS],
+        "calibration_snapshot": ibm.calibration_snapshot(BACKEND[0], qubits) if BACKEND else None})
     rows = []
     for r in results:
         for name, m in r["models"].items():
@@ -268,25 +250,52 @@ def main():
     p.add_argument("--restarts", type=int, default=3)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--yes", action="store_true", help="skip the confirmation before using real hardware")
+    p.add_argument("--skip-one-copy", action="store_true",
+                   help="leave out the 1-copy QNN (chance level by construction) to save device time")
+    p.add_argument("--run-label", default="run 1")
+    p.add_argument("--tag", help="output name suffix (default: 'fake' or 'ibm')")
+    p.add_argument("--floor", type=float, default=125.0, help="least quantum seconds the account must keep")
+    p.add_argument("--cap", type=float, default=170.0, help="most quantum seconds this run may spend")
+    p.add_argument("--replay", help="no device: recompute from saved counts in results/ibm_raw, either 'ibm' or "
+                                    "a fake backend that replayed the identical circuits (e.g. FakeMarrakesh); "
+                                    "use the original run's settings and --run-label")
     args = p.parse_args()
+    if args.replay:
+        ibm.set_replay(args.replay)
+        args.fake = args.replay != "ibm"   # labels the output as fake / real hardware
+    args.tag = args.tag or ("fake" if args.fake else "ibm")
 
     specs = task_specs(args)
     min_qubits = max(m.num_qubits for s in specs for m in s["models"])
-    if not args.fake and not args.yes:
+    if not args.fake and not args.yes and not args.replay:
         n_circ = sum((args.states + args.calibrate) * (len(s["models"]) + len(s["settings"])) for s in specs)
-        ans = input(f"This sends about {n_circ} circuits (~{args.copies} shots per state per model) to IBM "
-                    f"Quantum and uses your account's quantum time. Continue? [y/N] ")
+        shots = sum((args.states + args.calibrate) * (sum(args.copies // m.copies for m in s["models"])
+                                                       + args.copies // len(s["settings"]) * len(s["settings"]))
+                    for s in specs)
+        jobs = sum(len(s["models"]) + 1 for s in specs)
+        ans = input(f"This sends about {n_circ} circuits ({shots} shots, ~{ibm.estimate_seconds(shots, jobs):.0f} s "
+                    f"of quantum time) to IBM Quantum. Continue? [y/N] ")
         if ans.strip().lower() != "y":
             raise SystemExit("Cancelled.")
-    backend = get_backend(args, min_qubits)
+    global BUDGET
+    if args.replay:  # rebuild circuits only; counts come from results/ibm_raw
+        from qiskit_ibm_runtime import fake_provider
+        backend = getattr(fake_provider, "FakeMarrakesh" if args.replay == "ibm" else args.replay)()
+        if args.replay != "ibm":
+            BACKEND.append(backend)   # calibration snapshot = the fake backend's model of the same qubits
+    else:
+        backend = ibm.get_backend(args.fake, args.backend_fake, args.backend, min_qubits)
+        BACKEND.append(backend)
+    if not args.fake and not args.replay:
+        BUDGET = ibm.Budget(floor=args.floor, cap=args.cap)
     rng = np.random.default_rng(args.seed)
     t0 = time.time()
     results = []
     for spec in specs:
         print(f"\n{spec['name']}")
         results.append(run_task(spec, backend, args, rng))
-    write_outputs(results, backend.name, args)
-    tag = "fake" if args.fake else "ibm"
+    write_outputs(results, JOBS[0]["backend"] if args.replay else backend.name, args)
+    tag = args.tag
     print(f"\nDone in {time.time() - t0:.0f}s. Results: results/stage4_hardware_{tag}.{{json,md,png}}")
 
 
