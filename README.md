@@ -33,10 +33,18 @@ efficiency: with 64 copies of each test state, the two-copy QNN classifies
 entanglement at 0.96, against 0.79 for classical shadows (stage 3).
 
 **On a global property the gap becomes exponential (stage 5).** To tell pure states
-from mixed ones at 90% accuracy, the best single-copy classical method needs 128
-copies of each state at 2 qubits and 4,096 at 6 qubits. That is roughly double
-per added qubit, as theory predicts. The two-copy QNN needs 16–32 copies at
-every size (16–64 per seed). **On real hardware** (stage 7, `ibm_marrakesh`, 2
+from mixed ones at 90% accuracy, stage 5's single-copy classical method (shadow
+estimates of the global and single-qubit purities) needs 128 copies of each state
+at 2 qubits and 4,096 at 6 qubits, roughly doubling per added qubit. That method
+is not optimal: a stronger single-copy baseline (shadow estimates of the purity of
+every subsystem, stage 8) needs about 470 at 6 qubits and grows about 1.5× per
+qubit (log2 slope 0.60 [0.58, 0.62]). That is closer to, but still above, the √2
+per qubit (slope 0.5) that theory gives for the best single-copy strategy
+(Θ(2^{n/2}), Chen, Cotler, Huang & Li 2022), so it is not optimal either. The two-copy QNN needs
+16–32 copies at every size (16–64 per seed). **With shallow circuits** (stage 8:
+random brickwork circuits of 1–8 CZ layers, which hardware can run) the picture is
+the same from one layer on: the QNN needs about 20 copies at every size and depth,
+the best single-copy baseline 272–728 at 6 qubits. **On real hardware** (stage 7, `ibm_marrakesh`, 2
 qubits, two independent runs), the two-copy test needs about 48–55 copies for 90%
 and classical shadows with the same readout flexibility about 128. That is a ratio
 of about 2.5–2.9, and the hierarchical-bootstrap intervals stay above 1. The
@@ -248,8 +256,12 @@ Only the purity of the whole state separates them.
   `tests/`).
 - **Classical shadows.** Random-Pauli snapshots turned into an unbiased estimate of
   the *global* purity, plus single-qubit purities, with the best of 3 learners.
-  This is the best known single-copy strategy. A rank-4 factorisation makes the
-  estimator about 6ⁿ·4n operations instead of S²·n.
+  A rank-4 factorisation makes the estimator about 6ⁿ·4n operations instead of
+  S²·n. **This is not the best single-copy strategy.** Its cost grows about 2ⁿ,
+  while the optimal single-copy cost is Θ(2^{n/2}) (Chen, Cotler, Huang & Li
+  2022). Stage 8 adds a stronger baseline, shadow estimates of the purity of every
+  subsystem, which needs about 5× fewer copies at 6 qubits on these same Haar
+  states. The stage 5 tables below keep the original baseline.
 - Mixed states are handled as purifications (ρ = AA†) in the simulator and the
   snapshot sampler.
 
@@ -476,9 +488,111 @@ for run 1 and [−3.1, 0.6] for run 2.
   0.981. Both read low, by 0.09–0.10 for the QNN and 0.06–0.07 for shadows.
 
 At 2 qubits, single-copy shadows are cheap, so the gap is a constant factor. The exponential gap in stage 5 needs more qubits, which means deeper
-preparation circuits than this device can run cleanly. Results:
+preparation circuits than this device can run cleanly. Stage 8 replaces the
+Haar-random states with shallow circuits that can run at 3–4 qubits. Results:
 [results/stage7_hardware_purity_ibm.md](results/stage7_hardware_purity_ibm.md),
 [results/review_hardware.md](results/review_hardware.md).
+
+### Stage 8: pure or mixed with shallow random circuits
+
+Stage 5's Haar-random states need exponentially deep circuits, so only n = 2 ran on
+hardware. Stage 8 ([stage8_shallow_purity.py](stage8_shallow_purity.py)) uses
+states that shallow circuits prepare:
+
+- **Pure:** U|0…0⟩.
+- **Mixed:** U ρ₀ U†, where ρ₀ is |0⟩⟨0| on every qubit except one random qubit,
+  which starts in w|0⟩⟨0| + (1 − w)|1⟩⟨1|. As in stage 5, w is uniform in
+  [0.3, 0.7], so Tr ρ² is between 0.5 and 0.58.
+- **U** is a random brickwork circuit, fresh for every state: *depth* layers of
+  [Haar-random single-qubit gates, CZs on alternating neighbour pairs of a line].
+  Depth 0 (product states) is the easy control. "haar" reruns stage 5's states
+  with this code.
+- **On hardware** a state takes n + 1 qubits: an ancilla RY, a CX from the ancilla
+  to the chosen qubit, then U. Pure states run the same circuit with RY(0), so the
+  gate count does not depend on the label (checked in `tests/`).
+
+Purity does not change under U, so the two-copy SWAP test does not care about
+depth. The single-copy side does: at shallow depth the mixedness stays in the
+light cone of one qubit. Three methods:
+
+- **QNN 2-copy (parity, shared).** Trained on Haar states only (at 2 qubits,
+  fine-tuned at n, as in stage 5), then applied unchanged to every depth.
+- **Shadows: global + local purities.** Stage 5's baseline.
+- **Shadows: all subsystem purities.** Shadow estimates of Tr ρ_A² for every
+  subset A of the qubits, 2ⁿ − 1 features, all computed in one pass. A pure state
+  has Tr ρ_A² = Tr ρ_Ā² for every split, and a mixed state breaks this. Smaller
+  subsystems are much cheaper to estimate than the whole state.
+
+Both shadow baselines take the best of 3 learners on the test set, which flatters
+them. Copies are counted as in stage 5: QNN c/2 shots of two preparations,
+shadows c snapshots. The run used 200 training and 400 test states per (n, depth)
+and 3 seeds.
+
+![Stage 8](results/stage8_shallow_purity.png)
+
+Copies of each test state needed for 90% (mean curve over seeds, interpolated in
+log2 of copies), at 6 qubits:
+
+| Depth (CZ layers) | 0 | 1 | 2 | 4 | 8 | Haar |
+|---|---|---|---|---|---|---|
+| QNN 2-copy | 21 | 21 | 19 | 22 | 22 | 22 |
+| Shadows: global + local | 64 | 2,556 | 3,305 | 3,087 | 2,962 | 2,521 |
+| Shadows: all subsystems | 118 | 272 | 548 | 728 | 701 | 469 |
+
+And at depth 2, by size:
+
+| Qubits | 2 | 3 | 4 | 5 | 6 |
+|---|---|---|---|---|---|
+| QNN 2-copy | 19 | 15 | 20 | 18 | 19 |
+| Shadows: global + local | 88 | 187 | 530 | 1,319 | 3,305 |
+| Shadows: all subsystems | 88 | 161 | 290 | 415 | 548 |
+
+**What it shows:**
+
+- **The QNN is flat:** about 20 copies at every size and depth. The fitted log2
+  slope against n is 0.02–0.09 per qubit.
+- **Depth 0 is easy for the classical side.** Product states leave the mixed qubit
+  visible, so shadows need only 64–118 copies at 6 qubits.
+- **From one layer on, the classical cost grows with n.** These are log2 slopes
+  against n for n = 2–6: the mean of the per-seed fits, with a 95% t-interval
+  over 3 seeds (all values are in the results file).
+  - The stage 5 baseline has a slope of 1.18–1.34 per qubit, more than doubling.
+  - The all-subsystem baseline has a slope of 0.41 [0.31, 0.50] at depth 1,
+    0.67–0.71 at depths 2–8, and 0.60 [0.58, 0.62] on Haar states.
+  - Theory gives 0.5 for the best single-copy strategy. Several of these
+    intervals exclude 0.5, so the all-subsystem baseline is not optimal either.
+  - The QNN's slopes are 0.02–0.09, with intervals that include 0.
+- **At 2 CZ layers, shallow states are already as hard as Haar states**
+  (548 vs 469 copies at 6 qubits). The gap over the QNN is about 13× at 1 layer
+  and 29–33× from 2 layers on (21× on Haar states).
+- **Stage 5 overstated the classical cost.** On its own Haar states the stronger
+  baseline needs 469 copies at 6 qubits, against about 2,500 for the stage 5
+  baseline on the same draws (4,096 on stage 5's power-of-2 grid). The gap to the
+  QNN is real and grows with n, but against this baseline by about 1.5× per qubit,
+  not 2×. Against an optimal single-copy strategy, theory puts it at √2 per qubit.
+- **How visible is the label without the global purity?** With exact, infinite-copy
+  purities of single qubits, the best learner reaches 0.63–0.87 at 6 qubits and
+  depth ≥ 1, so the mixedness is partly visible locally. With exact purities of all
+  proper subsystems it reaches 1.00 at every depth from 3 qubits up, for the
+  reason above: pure states have equal purity across every split. Single-copy
+  methods can see the label. What makes them expensive is estimating those
+  purities.
+
+**Hardware plan (nothing run).** `--plan` transpiles 20 pure and 20 mixed states
+per (n, depth) for FakeMarrakesh:
+
+- At depth 2, the two-copy circuit needs 14, 21 and about 31 two-qubit gates at
+  n = 2, 3 and 4. That is 6, 8 and up to 11 physical qubits (routing adds one at n = 4). Stage 7's 2-qubit Haar
+  circuits had 7 CZ per preparation.
+- Pure and mixed circuits have the same two-qubit gate counts within their spread.
+- Mixed circuits are one layer deeper, because the transpiler drops the pure
+  states' RY(0). That costs one single-qubit gate, not a two-qubit one.
+- A stage-7-sized run (80 states, 1,024 copies each) is estimated at about 37 s of
+  quantum time. The account has about 37 s of the 600 s rolling window left until
+  the 8–9 Nov jobs roll off (around 6–9 Dec), so nothing has been submitted.
+
+Full tables: [results/stage8_shallow_purity.md](results/stage8_shallow_purity.md),
+[results/stage8_hardware_plan.md](results/stage8_hardware_plan.md).
 
 ### Stage 6: a toy lattice gauge theory (not Yang–Mills)
 
@@ -636,6 +750,8 @@ python stage4_hardware.py --fake       # ~1 min  IBM device noise model, no acco
 python stage5_purity.py                # ~35 min pure vs mixed, 2-6 qubits, copies-needed scaling
 python stage6_gauge.py                 # ~1 min  Z2 lattice gauge theory: gap, confinement, phases
 python stage7_hardware_purity.py --fake  # ~1 min pure vs mixed on the FakeMarrakesh noise model
+python stage8_shallow_purity.py        # ~21 min pure vs mixed with shallow random circuits (10 workers)
+python stage8_shallow_purity.py --plan --qubits 2 3 4 --depths 1 2 4   # hardware circuit cost, transpile only
 python review_seeds.py --stage 1       # ~2 min  5-seed uncertainty (also --stage 2, 5, 6)
 python review_gradients.py             # ~20 min gradient variance vs qubits (barren-plateau check)
 python review_hardware.py              # summary of every hardware run, real vs fake
@@ -681,15 +797,15 @@ seconds.
 ## Repo layout
 
 ```
-stage1_entanglement.py ... stage7_hardware_purity.py    one CLI per stage
+stage1_entanglement.py ... stage8_shallow_purity.py   one CLI per stage
 review_*.py, fetch_ibm_results.py   robustness checks (uncertainty, gradients, model selection, hardware)
 docs/YANG_MILLS.md       the Millennium problem: statement, known results, what stage 6 does not show
 entangle/
-  states.py      product/entangled states, Meyer-Wallach Q, concurrence, Ising ground states, pure/mixed states
+  states.py      product/entangled states, Meyer-Wallach Q, concurrence, Ising ground states, pure/mixed states (Haar and shallow circuits)
   circuits.py    1-copy QNN, 2-copy QNN, QCNN, generic ansatz (tied weights, readout masks)
   sim.py         batched state-vector simulator with adjoint gradients
   qnn.py         training (exact probabilities, L-BFGS-B, readout calibration), mixed-state batches, shots
-  measure.py     Pauli snapshots, feature estimates, shadow global-purity estimator, measurement circuits
+  measure.py     Pauli snapshots, feature estimates, shadow global- and subsystem-purity estimators, measurement circuits
   classical.py   logistic regression / RBF SVM / MLP baselines
   gauge.py       Z2 lattice gauge theory: lattice, Wegner-dual solver, Wilson loops, link-qubit states
   ibm.py         IBM Runtime access: credentials, quantum-time budget guard, job log, calibration snapshots
@@ -703,12 +819,16 @@ results/         JSON, Markdown tables and charts for every stage, dependency au
 
 - **Small systems.** We test 2–4 qubits for entanglement (8 with two copies),
   4–8 for Ising and 2–6 for purity (12 with two copies), all simulated exactly.
-  The exponential trend in stage 5 is measured over five sizes. It matches the
-  theory, but it is not a proof of scaling, which the cited papers provide.
+  The exponential trends in stages 5 and 8 are measured over five sizes, which is
+  not a proof of scaling; the cited papers provide that. Stage 5's classical
+  baseline grows faster than the optimal single-copy strategy, so its 2× per qubit
+  overstates the gap. Stage 8's all-subsystem baseline (about 1.5× per qubit) is
+  closer to the theoretical √2, but still above it.
 - **Stage 5 states are Haar-random,** chosen because the theory is cleanest for
   them. Preparing Haar-random states needs circuits whose depth grows
-  exponentially, so only the 2-qubit case has run on hardware (stage 7). A larger
-  hardware version would use shallow random circuits (approximate designs).
+  exponentially, so only the 2-qubit case has run on hardware (stage 7). Stage 8
+  repeats the test with shallow random circuits, in simulation only so far; its
+  hardware circuits are planned (FakeMarrakesh transpile) but not run.
 - **The two-copy model is physics-informed.** Its pairwise blocks and its
   readouts ("any pair reads 11", "an odd number of pairs read 11") are designed
   so that the SWAP test is expressible. Training finds it, with weight sharing or
@@ -719,8 +839,10 @@ results/         JSON, Markdown tables and charts for every stage, dependency au
 - **Training is noise-free.** Models are trained on exact probabilities and only
   tested with shots and noise. On the device they need recalibration on a few
   labelled states, and so do the classical baselines.
-- **Classical baselines are generic** (sklearn), but picking the best of them on
-  the test set flatters the classical side. A hand-written classical estimator
+- **Classical baselines are generic** (sklearn learners on shadow features), but
+  picking the best of them on the test set flatters the classical side. They are
+  not guaranteed optimal: stage 8 found a single-copy baseline about 5× cheaper
+  than stage 5's at 6 qubits, and a hand-designed estimator could do better still. A hand-written classical estimator
   can compute Q from the state vector exactly, and that is how the labels are made.
 - **Ising states are loaded with `StatePreparation`.** That is exact, but it is
   not how a real experiment would make them. For stage 4 we keep the chain at 4

@@ -1,0 +1,338 @@
+{
+  "settings": {
+    "qubits": [
+      2,
+      3,
+      4
+    ],
+    "depths": [
+      1,
+      2,
+      4
+    ],
+    "copies": [
+      2,
+      4,
+      8,
+      16,
+      32,
+      64,
+      128,
+      256,
+      512,
+      1024,
+      2048,
+      4096
+    ],
+    "target": 0.9,
+    "train": 200,
+    "test": 400,
+    "seeds": 3,
+    "maxiter": 150,
+    "finetune": 30,
+    "restarts": 2,
+    "mid_depth": 2,
+    "workers": 10,
+    "plan_states": 20,
+    "plan": true
+  },
+  "plan": [
+    {
+      "n": 2,
+      "depth": 1,
+      "states_per_class": 20,
+      "qnn_2q_pure": [
+        10.05,
+        1.4309088021254184
+      ],
+      "qnn_2q_mixed": [
+        10.65,
+        1.49248115565993
+      ],
+      "qnn_depth_pure": [
+        31.1,
+        2.8618176042508368
+      ],
+      "qnn_depth_mixed": [
+        33.3,
+        2.98496231131986
+      ],
+      "shadow_2q_pure": [
+        2.0,
+        0.0
+      ],
+      "shadow_2q_mixed": [
+        2.0,
+        0.0
+      ],
+      "physical_qubits": 6,
+      "circuits": 800,
+      "shots": 122320,
+      "estimated_seconds": 37.0
+    },
+    {
+      "n": 2,
+      "depth": 2,
+      "states_per_class": 20,
+      "qnn_2q_pure": [
+        14.0,
+        0.0
+      ],
+      "qnn_2q_mixed": [
+        14.0,
+        0.0
+      ],
+      "qnn_depth_pure": [
+        41.0,
+        0.0
+      ],
+      "qnn_depth_mixed": [
+        42.0,
+        0.0
+      ],
+      "shadow_2q_pure": [
+        3.0,
+        0.0
+      ],
+      "shadow_2q_mixed": [
+        3.0,
+        0.0
+      ],
+      "physical_qubits": 6,
+      "circuits": 800,
+      "shots": 122320,
+      "estimated_seconds": 37.0
+    },
+    {
+      "n": 2,
+      "depth": 4,
+      "states_per_class": 20,
+      "qnn_2q_pure": [
+        18.0,
+        0.0
+      ],
+      "qnn_2q_mixed": [
+        18.0,
+        0.0
+      ],
+      "qnn_depth_pure": [
+        53.0,
+        0.0
+      ],
+      "qnn_depth_mixed": [
+        54.0,
+        0.0
+      ],
+      "shadow_2q_pure": [
+        5.0,
+        0.0
+      ],
+      "shadow_2q_mixed": [
+        5.0,
+        0.0
+      ],
+      "physical_qubits": 6,
+      "circuits": 800,
+      "shots": 122320,
+      "estimated_seconds": 37.0
+    },
+    {
+      "n": 3,
+      "depth": 1,
+      "states_per_class": 20,
+      "qnn_2q_pure": [
+        12.4,
+        1.2
+      ],
+      "qnn_2q_mixed": [
+        12.1,
+        1.374772708486752
+      ],
+      "qnn_depth_pure": [
+        30.75,
+        3.6314597615834874
+      ],
+      "qnn_depth_mixed": [
+        30.7,
+        4.267317658670374
+      ],
+      "shadow_2q_pure": [
+        2.0,
+        0.0
+      ],
+      "shadow_2q_mixed": [
+        2.0,
+        0.0
+      ],
+      "physical_qubits": 8,
+      "circuits": 2240,
+      "shots": 120880,
+      "estimated_seconds": 36.6
+    },
+    {
+      "n": 3,
+      "depth": 2,
+      "states_per_class": 20,
+      "qnn_2q_pure": [
+        21.0,
+        0.0
+      ],
+      "qnn_2q_mixed": [
+        21.0,
+        0.0
+      ],
+      "qnn_depth_pure": [
+        45.9,
+        6.647555941848102
+      ],
+      "qnn_depth_mixed": [
+        45.3,
+        7.362744053679987
+      ],
+      "shadow_2q_pure": [
+        3.0,
+        0.0
+      ],
+      "shadow_2q_mixed": [
+        3.0,
+        0.0
+      ],
+      "physical_qubits": 8,
+      "circuits": 2240,
+      "shots": 120880,
+      "estimated_seconds": 36.6
+    },
+    {
+      "n": 3,
+      "depth": 4,
+      "states_per_class": 20,
+      "qnn_2q_pure": [
+        26.95,
+        1.4309088021254184
+      ],
+      "qnn_2q_mixed": [
+        27.1,
+        1.374772708486752
+      ],
+      "qnn_depth_pure": [
+        53.65,
+        0.4769696007084729
+      ],
+      "qnn_depth_mixed": [
+        54.4,
+        0.4898979485566357
+      ],
+      "shadow_2q_pure": [
+        5.0,
+        0.0
+      ],
+      "shadow_2q_mixed": [
+        5.0,
+        0.0
+      ],
+      "physical_qubits": 8,
+      "circuits": 2240,
+      "shots": 120880,
+      "estimated_seconds": 36.6
+    },
+    {
+      "n": 4,
+      "depth": 1,
+      "states_per_class": 20,
+      "qnn_2q_pure": [
+        17.8,
+        2.4000000000000004
+      ],
+      "qnn_2q_mixed": [
+        18.4,
+        2.2449944320643644
+      ],
+      "qnn_depth_pure": [
+        32.4,
+        4.454211490264018
+      ],
+      "qnn_depth_mixed": [
+        34.6,
+        4.17612260356422
+      ],
+      "shadow_2q_pure": [
+        3.0,
+        0.0
+      ],
+      "shadow_2q_mixed": [
+        3.0,
+        0.0
+      ],
+      "physical_qubits": 11,
+      "circuits": 6560,
+      "shots": 118720,
+      "estimated_seconds": 36.0
+    },
+    {
+      "n": 4,
+      "depth": 2,
+      "states_per_class": 20,
+      "qnn_2q_pure": [
+        30.45,
+        4.477443466979789
+      ],
+      "qnn_2q_mixed": [
+        32.85,
+        5.150485414016818
+      ],
+      "qnn_depth_pure": [
+        52.8,
+        8.506468127254696
+      ],
+      "qnn_depth_mixed": [
+        57.0,
+        8.706319543871567
+      ],
+      "shadow_2q_pure": [
+        4.0,
+        0.0
+      ],
+      "shadow_2q_mixed": [
+        4.0,
+        0.0
+      ],
+      "physical_qubits": 11,
+      "circuits": 6560,
+      "shots": 118720,
+      "estimated_seconds": 36.0
+    },
+    {
+      "n": 4,
+      "depth": 4,
+      "states_per_class": 20,
+      "qnn_2q_pure": [
+        43.95,
+        1.4309088021254184
+      ],
+      "qnn_2q_mixed": [
+        43.95,
+        1.4309088021254184
+      ],
+      "qnn_depth_pure": [
+        62.8,
+        11.42628548566856
+      ],
+      "qnn_depth_mixed": [
+        63.8,
+        11.42628548566856
+      ],
+      "shadow_2q_pure": [
+        7.0,
+        0.0
+      ],
+      "shadow_2q_mixed": [
+        7.0,
+        0.0
+      ],
+      "physical_qubits": 10,
+      "circuits": 6560,
+      "shots": 118720,
+      "estimated_seconds": 36.0
+    }
+  ]
+}

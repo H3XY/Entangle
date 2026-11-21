@@ -280,3 +280,106 @@ def make_purity_data(n, num_states, seed=0, w_range=(0.3, 0.7)):
             A[k, :, 0], A[k, :, 1] = np.sqrt(w) * a, np.sqrt(1 - w) * b
             pur[k] = w ** 2 + (1 - w) ** 2
     return PurityData(n, A, pur, labels)
+
+
+# --------------------------------------------------------------------------- #
+# Stage 8: pure vs mixed with shallow random circuits (hardware-friendly)
+# --------------------------------------------------------------------------- #
+
+
+def _u3(theta, phi, lam):
+    c, s = np.cos(theta / 2), np.sin(theta / 2)
+    return np.array([[c, -np.exp(1j * lam) * s], [np.exp(1j * phi) * s, np.exp(1j * (phi + lam)) * c]])
+
+
+def brickwork_pairs(n, layer):
+    """CZ pairs of one brickwork layer on a line: (i, i+1) for i = layer mod 2, layer mod 2 + 2, ...
+    (n = 2 has only one pair, used in every layer)."""
+    pairs = [(i, i + 1) for i in range(layer % 2, n - 1, 2)]
+    return pairs or [(i, i + 1) for i in range(0, n - 1, 2)]
+
+
+def random_shallow_circuit(n, depth, rng):
+    """`depth` layers of [Haar-random single-qubit gate on every qubit, brickwork CZs], then a
+    final single-qubit layer. Returns the U3 angles, shape (depth + 1, n, 3). U3(theta, phi, lam)
+    is Haar-random when cos^2(theta / 2) is uniform and phi, lam are uniform."""
+    theta = 2 * np.arccos(np.sqrt(rng.random((depth + 1, n))))
+    phi, lam = rng.uniform(0, 2 * np.pi, (2, depth + 1, n))
+    return np.stack([theta, phi, lam], axis=-1)
+
+
+def apply_shallow_circuit(A, n, angles):
+    """Apply the circuit to the columns of A (shape (2^n, r)); qubit q = bit q of the index."""
+    r = A.shape[1]
+    t = A.reshape([2] * n + [r]).astype(complex)
+
+    def one(t, G, q):
+        ax = n - 1 - q
+        return np.moveaxis(np.tensordot(G, t, axes=([1], [ax])), 0, ax)
+    depth = len(angles) - 1
+    for layer in range(depth + 1):
+        for q in range(n):
+            t = one(t, _u3(*angles[layer, q]), q)
+        if layer < depth:
+            for a, b in brickwork_pairs(n, layer):
+                idx = [slice(None)] * (n + 1)
+                idx[n - 1 - a], idx[n - 1 - b] = 1, 1
+                t[tuple(idx)] *= -1
+    return t.reshape(2 ** n, r)
+
+
+@dataclass
+class ShallowPurityData:
+    n: int
+    depth: int
+    states: np.ndarray       # (N, 2^n, 2) purifications: rho = A A^dagger
+    purity: np.ndarray
+    y: np.ndarray            # 1 = mixed, 0 = pure
+    angles: np.ndarray       # (N, depth + 1, n, 3) circuit of each state
+    weight: np.ndarray       # w (1 for pure states)
+    site: np.ndarray         # qubit the ancilla is entangled with
+
+    def circuit(self, i):
+        return shallow_prep_circuit(self.n, self.angles[i], self.weight[i], self.site[i])
+
+
+def make_shallow_purity_data(n, num_states, depth, seed=0, w_range=(0.3, 0.7)):
+    """Balanced: pure states U|0...0> vs rank-2 mixed states U rho_0 U^dagger, with U a random
+    depth-`depth` brickwork circuit (random per state) and rho_0 = |0><0| except one random qubit s,
+    which starts in w|0><0| + (1 - w)|1><1| (w uniform in w_range, so Tr rho^2 = w^2 + (1-w)^2 as in
+    stage 5). Mixed: a = U|0..0>, b = U X_s |0..0>, rho = w|a><a| + (1-w)|b><b|.
+
+    On hardware both classes run the same circuit: ancilla RY, CX(ancilla -> s), then U on the
+    system; pure states have w = 1 (RY(0)), so the gate count does not depend on the label.
+    """
+    rng = np.random.default_rng(seed)
+    dim = 2 ** n
+    labels = np.array([0, 1] * (num_states // 2) + [1] * (num_states % 2))
+    rng.shuffle(labels)
+    A = np.zeros((num_states, dim, 2), dtype=complex)
+    angles = np.empty((num_states, depth + 1, n, 3))
+    weight, site = np.ones(num_states), rng.integers(0, n, num_states)
+    for k, label in enumerate(labels):
+        angles[k] = random_shallow_circuit(n, depth, rng)
+        if label == 1:
+            weight[k] = rng.uniform(*w_range)
+        A0 = np.zeros((dim, 2), dtype=complex)
+        A0[0, 0] = np.sqrt(weight[k])
+        A0[1 << site[k], 1] = np.sqrt(1 - weight[k])
+        A[k] = apply_shallow_circuit(A0, n, angles[k])
+    return ShallowPurityData(n, depth, A, weight ** 2 + (1 - weight) ** 2, labels, angles, weight, site)
+
+
+def shallow_prep_circuit(n, angles, w, s):
+    """(n + 1)-qubit purification: system qubits 0..n-1, ancilla qubit n (never measured)."""
+    qc = QuantumCircuit(n + 1, name="prep")
+    qc.ry(2 * np.arccos(np.sqrt(np.clip(w, 0, 1))), n)
+    qc.cx(n, int(s))
+    depth = len(angles) - 1
+    for layer in range(depth + 1):
+        for q in range(n):
+            qc.u(*angles[layer, q], q)
+        if layer < depth:
+            for a, b in brickwork_pairs(n, layer):
+                qc.cz(a, b)
+    return qc

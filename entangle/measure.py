@@ -266,3 +266,48 @@ def purity_features(snapshots, n):
     local = shadow_features(snapshots, n, paulis)[:, -n:]
     glob = np.array([[shadow_global_purity(s, b)] for s, b in snapshots])
     return np.concatenate([glob, local], axis=1)
+
+
+def _support_masks(n):
+    """Bitmask of the qubits where each index of PHI^(x)n is non-constant (row != 0)."""
+    idx = np.indices([4] * n).reshape(n, -1)                     # idx[k] = row on axis k = qubit n-1-k
+    return ((idx != 0) * (1 << (n - 1 - np.arange(n)))[:, None]).sum(0)
+
+
+def shadow_subset_purities(settings, bits):
+    """Unbiased classical-shadow estimates of Tr(rho_A^2) for every subset A of the qubits.
+
+    Returns an array of length 2^n indexed by the bitmask of A (index 0 = empty set = 1).
+    Same estimator as shadow_global_purity, applied to the snapshot bits of A only. Marginalising
+    the histogram over qubit q is contracting it with the all-ones vector, which is sqrt(2) times
+    row 0 of PHI, so with F = PHI^(x)n applied to the full histogram,
+    sum_k F_A,k^2 = 2^(n - |A|) * (sum of F^2 over entries whose non-zero rows lie inside A).
+    One pass over the 4^n entries of F and a subset-sum transform give all 2^n subsets.
+    """
+    codes = 2 * settings.astype(int) + bits.astype(int)
+    S, n = codes.shape
+    out = np.ones(2 ** n)
+    if S < 2:
+        out[1:] = 0.0
+        return out
+    hist = np.zeros(6 ** n)
+    np.add.at(hist, codes @ (6 ** np.arange(n)), 1)
+    F = hist.reshape([6] * n)
+    for ax in range(n):
+        F = np.moveaxis(np.tensordot(_PHI, F, axes=([1], [ax])), 0, ax)
+    g = np.bincount(_support_masks(n), weights=F.reshape(-1) ** 2, minlength=2 ** n)
+    for q in range(n):                                            # subset sums (zeta transform)
+        bit = 1 << q
+        for m in range(2 ** n):
+            if m & bit:
+                g[m] += g[m ^ bit]
+    size = np.array([bin(m).count("1") for m in range(2 ** n)])
+    est = (2.0 ** (n - size) * g - S * 5.0 ** size) / (S * (S - 1))
+    out[1:] = est[1:]
+    return out
+
+
+def subset_purity_features(snapshots, n):
+    """Shadow estimates of Tr(rho_A^2) for every non-empty subset A (2^n - 1 features; the last
+    is the whole state). For a pure state Tr rho_A^2 = Tr rho_Abar^2, which a mixed state breaks."""
+    return np.array([shadow_subset_purities(s, b)[1:] for s, b in snapshots])
