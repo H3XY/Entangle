@@ -38,8 +38,9 @@ estimates of the global and single-qubit purities) needs 128 copies of each stat
 at 2 qubits and 4,096 at 6 qubits, roughly doubling per added qubit. That method
 is not optimal: a stronger single-copy baseline (shadow estimates of the purity of
 every subsystem, stage 8) needs about 470 at 6 qubits and grows about 1.5× per
-qubit, close to the √2 per qubit that theory gives for the best single-copy
-strategy (Θ(2^{n/2}), Chen, Cotler, Huang & Li 2022). The two-copy QNN needs
+qubit (log2 slope 0.60 [0.58, 0.62]). That is closer to, but still above, the √2
+per qubit (slope 0.5) that theory gives for the best single-copy strategy
+(Θ(2^{n/2}), Chen, Cotler, Huang & Li 2022), so it is not optimal either. The two-copy QNN needs
 16–32 copies at every size (16–64 per seed). **With shallow circuits** (stage 8:
 random brickwork circuits of 1–8 CZ layers, which hardware can run) the picture is
 the same from one layer on: the QNN needs about 20 copies at every size and depth,
@@ -552,18 +553,23 @@ And at depth 2, by size:
   slope against n is 0.02–0.09 per qubit.
 - **Depth 0 is easy for the classical side.** Product states leave the mixed qubit
   visible, so shadows need only 64–118 copies at 6 qubits.
-- **From one layer on, the classical cost grows with n.** The stage 5 baseline has
-  a log2 slope of 1.2–1.3 per qubit, more than doubling. The all-subsystem
-  baseline has a slope of 0.41 at depth 1 and 0.60–0.71 at depth 2 and above
-  (n = 2–6, mean of per-seed fits). Theory gives 0.5 for the best single-copy
-  strategy.
+- **From one layer on, the classical cost grows with n.** These are log2 slopes
+  against n for n = 2–6: the mean of the per-seed fits, with a 95% t-interval
+  over 3 seeds (all values are in the results file).
+  - The stage 5 baseline has a slope of 1.18–1.34 per qubit, more than doubling.
+  - The all-subsystem baseline has a slope of 0.41 [0.31, 0.50] at depth 1,
+    0.67–0.71 at depths 2–8, and 0.60 [0.58, 0.62] on Haar states.
+  - Theory gives 0.5 for the best single-copy strategy. Several of these
+    intervals exclude 0.5, so the all-subsystem baseline is not optimal either.
+  - The QNN's slopes are 0.02–0.09, with intervals that include 0.
 - **At 2 CZ layers, shallow states are already as hard as Haar states**
   (548 vs 469 copies at 6 qubits). The gap over the QNN is about 13× at 1 layer
   and 29–33× from 2 layers on (21× on Haar states).
 - **Stage 5 overstated the classical cost.** On its own Haar states the stronger
   baseline needs 469 copies at 6 qubits, against about 2,500 for the stage 5
   baseline on the same draws (4,096 on stage 5's power-of-2 grid). The gap to the
-  QNN is real and grows with n, but it grows about √2 per qubit, not 2×.
+  QNN is real and grows with n, but against this baseline by about 1.5× per qubit,
+  not 2×. Against an optimal single-copy strategy, theory puts it at √2 per qubit.
 - **How visible is the label without the global purity?** With exact, infinite-copy
   purities of single qubits, the best learner reaches 0.63–0.87 at 6 qubits and
   depth ≥ 1, so the mixedness is partly visible locally. With exact purities of all
@@ -816,8 +822,8 @@ results/         JSON, Markdown tables and charts for every stage, dependency au
   The exponential trends in stages 5 and 8 are measured over five sizes, which is
   not a proof of scaling; the cited papers provide that. Stage 5's classical
   baseline grows faster than the optimal single-copy strategy, so its 2× per qubit
-  overstates the gap; stage 8's all-subsystem baseline (about 1.5× per qubit) is
-  closer to the theoretical √2.
+  overstates the gap. Stage 8's all-subsystem baseline (about 1.5× per qubit) is
+  closer to the theoretical √2, but still above it.
 - **Stage 5 states are Haar-random,** chosen because the theory is cleanest for
   them. Preparing Haar-random states needs circuits whose depth grows
   exponentially, so only the 2-qubit case has run on hardware (stage 7). Stage 8

@@ -166,9 +166,37 @@ def summarise(jobs, args):
     return res
 
 
+def slopes(res, args):
+    """log2(copies needed) vs n: least-squares slope per seed (n = all sizes, and n >= 3), mean, and
+    the 95% t-interval over seeds. Slope 1 = doubling per qubit; theory for the best single-copy
+    strategy is 0.5 (Theta(2^(n/2)))."""
+    from scipy import stats
+    out = {}
+    for d in args.depths:
+        out[str(d)] = {}
+        for m in METHODS:
+            per = np.array([[np.nan if v is None else v for v in res[str(n)][str(d)]["copies_needed_per_seed"][m]]
+                            for n in args.qubits], dtype=float)
+            row = {}
+            for key, ns in (("all_n", args.qubits), ("n_ge_3", [n for n in args.qubits if n >= 3])):
+                if len(ns) < 2 or np.isnan(per).any():
+                    row[key] = None
+                    continue
+                idx = [args.qubits.index(n) for n in ns]
+                sl = [float(np.polyfit(ns, np.log2(per[idx, k]), 1)[0]) for k in range(per.shape[1])]
+                half = (float(stats.t.ppf(0.975, len(sl) - 1) * np.std(sl, ddof=1) / np.sqrt(len(sl)))
+                        if len(sl) > 1 else None)
+                row[key] = {"per_seed": sl, "mean": float(np.mean(sl)),
+                            "ci95": None if half is None else [float(np.mean(sl)) - half, float(np.mean(sl)) + half],
+                            "qubits": ns}
+            out[str(d)][m] = row
+    return out
+
+
 def write_outputs(res, jobs, args, plan=None):
-    report.save_json("stage8_shallow_purity.json", {"settings": vars(args), "summary": res, "runs": jobs,
-                                                    "plan": plan})
+    fits = slopes(res, args)
+    report.save_json("stage8_shallow_purity.json", {"settings": vars(args), "summary": res, "slopes": fits,
+                                                    "runs": jobs, "plan": plan})
     C = args.copies
     nm = lambda v: f"> {C[-1]}" if v is None else f"{v:.0f}"  # noqa: E731
     need_rows, exact_rows, curve_rows = [], [], []
@@ -191,6 +219,17 @@ def write_outputs(res, jobs, args, plan=None):
           f"## Copies of each test state needed for {args.target:.0%} accuracy", "",
           "Mean curve over seeds, interpolated linearly in log2(copies); per seed in brackets.", "",
           report.md_table(["Qubits", "Depth"] + list(METHODS), need_rows), "",
+          "## Growth with qubits: log2(copies needed) vs n", "",
+          "Least-squares slope of log2(copies for the target) against n, fitted per seed; mean, 95% t-interval "
+          "over seeds, and per-seed slopes. 1 = doubling per qubit. Theory for the best single-copy strategy: "
+          "0.5 (Theta(2^(n/2)), Chen, Cotler, Huang & Li 2022).", "",
+          report.md_table(["Depth", "Method", f"Slope, n = {args.qubits[0]}-{args.qubits[-1]}", "Per seed",
+                           "Slope, n >= 3", "Per seed"],
+                          [[d, m] + sum(([fmt_slope(fits[str(d)][m][k]),
+                                          "–" if fits[str(d)][m][k] is None else
+                                          ", ".join(f"{x:+.2f}" for x in fits[str(d)][m][k]["per_seed"])]
+                                         for k in ("all_n", "n_ge_3")), [])
+                           for d in args.depths for m in METHODS]), "",
           "## How visible is the label without the global purity? (exact, infinite copies)", "",
           "Test accuracy of the best classical learner on exact purities of single qubits, or of every "
           "proper subsystem (all subsets except the whole state). 0.5 = invisible.", "",
@@ -201,6 +240,13 @@ def write_outputs(res, jobs, args, plan=None):
         md += plan_md(plan)
     report.save_text("stage8_shallow_purity.md", "\n".join(md))
     plot(res, args)
+
+
+def fmt_slope(f):
+    if f is None:
+        return "–"
+    ci = "" if f["ci95"] is None else f" [{f['ci95'][0]:+.2f}, {f['ci95'][1]:+.2f}]"
+    return f"{f['mean']:+.2f}{ci}"
 
 
 def plot(res, args):
@@ -331,6 +377,8 @@ def main():
     p.add_argument("--mid-depth", type=depth_key, default=2, help="depth of the by-qubits panel")
     p.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 2))
     p.add_argument("--plan-states", type=int, default=20, help="--plan: states per class to transpile")
+    p.add_argument("--from-json", action="store_true",
+                   help="rewrite the outputs from results/stage8_shallow_purity.json (no simulation)")
     p.add_argument("--plan", action="store_true", help="only transpile the hardware circuits and estimate cost")
     args = p.parse_args()
     args.depths = [depth_key(d) for d in args.depths]
@@ -340,6 +388,16 @@ def main():
         report.save_json("stage8_hardware_plan.json", {"settings": vars(args), "plan": rows})
         report.save_text("stage8_hardware_plan.md", "\n".join(["# Stage 8 hardware plan", ""] + plan_md(rows)[2:]))
         print(f"Done in {time.time() - t0:.0f}s: results/stage8_hardware_plan.{{json,md}}")
+        return
+    if args.from_json:
+        import json
+        saved = json.load(open(report.path("stage8_shallow_purity.json")))
+        for k, v in saved["settings"].items():
+            if k not in ("from_json", "plan", "workers"):
+                setattr(args, k, v)
+        args.depths = [depth_key(d) for d in args.depths]
+        write_outputs(summarise(saved["runs"], args), saved["runs"], args)
+        print("Rewrote results/stage8_shallow_purity.{json,md,png} from the saved runs")
         return
     tasks = sorted(product(range(args.seeds), args.qubits), key=lambda t: -t[1])   # big n first
     jobs = []

@@ -39,6 +39,31 @@ Mean curve over seeds, interpolated linearly in log2(copies); per seed in bracke
 | 6 | 8 | 22 (36, 23, 11) | 2962 (3069, 2940, 2874) | 701 (749, 650, 680) |
 | 6 | haar | 22 (31, 19, 13) | 2521 (2445, 3028, 2048) | 469 (463, 476, 470) |
 
+## Growth with qubits: log2(copies needed) vs n
+
+Least-squares slope of log2(copies for the target) against n, fitted per seed; mean, 95% t-interval over seeds, and per-seed slopes. 1 = doubling per qubit. Theory for the best single-copy strategy: 0.5 (Theta(2^(n/2)), Chen, Cotler, Huang & Li 2022).
+
+| Depth | Method | Slope, n = 2-6 | Per seed | Slope, n >= 3 | Per seed |
+|---|---|---|---|---|---|
+| 0 | QNN 2-copy (parity, shared) | +0.08 [-0.33, +0.49] | +0.04, +0.26, -0.07 | +0.18 [-0.27, +0.62] | +0.24, +0.32, -0.03 |
+| 0 | Shadows: global + local purities | +0.16 [+0.03, +0.29] | +0.22, +0.13, +0.14 | +0.11 [+0.01, +0.21] | +0.15, +0.07, +0.10 |
+| 0 | Shadows: all subsystem purities | +0.32 [+0.24, +0.41] | +0.36, +0.29, +0.32 | +0.32 [+0.28, +0.35] | +0.32, +0.30, +0.33 |
+| 1 | QNN 2-copy (parity, shared) | +0.06 [-0.23, +0.36] | -0.05, +0.19, +0.05 | +0.17 [-0.19, +0.54] | +0.20, +0.31, +0.02 |
+| 1 | Shadows: global + local purities | +1.18 [+1.03, +1.34] | +1.13, +1.17, +1.25 | +1.34 [+0.99, +1.69] | +1.18, +1.38, +1.45 |
+| 1 | Shadows: all subsystem purities | +0.41 [+0.31, +0.50] | +0.37, +0.45, +0.40 | +0.46 [+0.27, +0.66] | +0.41, +0.55, +0.43 |
+| 2 | QNN 2-copy (parity, shared) | +0.02 [-0.36, +0.40] | -0.06, +0.20, -0.08 | +0.07 [-0.37, +0.50] | +0.14, +0.20, -0.13 |
+| 2 | Shadows: global + local purities | +1.34 [+1.19, +1.48] | +1.28, +1.40, +1.33 | +1.38 [+1.28, +1.47] | +1.33, +1.39, +1.40 |
+| 2 | Shadows: all subsystem purities | +0.67 [+0.48, +0.86] | +0.68, +0.75, +0.59 | +0.59 [+0.34, +0.84] | +0.60, +0.69, +0.48 |
+| 4 | QNN 2-copy (parity, shared) | +0.09 [-0.35, +0.53] | -0.01, +0.29, -0.03 | +0.19 [-0.19, +0.58] | +0.27, +0.30, +0.01 |
+| 4 | Shadows: global + local purities | +1.27 [+1.07, +1.46] | +1.29, +1.33, +1.18 | +1.25 [+1.08, +1.41] | +1.28, +1.29, +1.17 |
+| 4 | Shadows: all subsystem purities | +0.71 [+0.48, +0.94] | +0.79, +0.73, +0.61 | +0.67 [+0.47, +0.87] | +0.75, +0.68, +0.59 |
+| 8 | QNN 2-copy (parity, shared) | +0.09 [-0.38, +0.56] | +0.06, +0.30, -0.08 | +0.19 [-0.41, +0.78] | +0.27, +0.38, -0.08 |
+| 8 | Shadows: global + local purities | +1.20 [+1.15, +1.25] | +1.23, +1.19, +1.20 | +1.20 [+1.15, +1.25] | +1.18, +1.22, +1.20 |
+| 8 | Shadows: all subsystem purities | +0.70 [+0.66, +0.74] | +0.72, +0.69, +0.69 | +0.66 [+0.59, +0.74] | +0.68, +0.68, +0.63 |
+| haar | QNN 2-copy (parity, shared) | +0.07 [-0.31, +0.46] | -0.02, +0.25, -0.01 | +0.17 [-0.28, +0.63] | +0.23, +0.32, -0.03 |
+| haar | Shadows: global + local purities | +1.19 [+1.08, +1.30] | +1.19, +1.23, +1.15 | +1.22 [+1.02, +1.42] | +1.29, +1.24, +1.13 |
+| haar | Shadows: all subsystem purities | +0.60 [+0.58, +0.62] | +0.60, +0.59, +0.60 | +0.53 [+0.45, +0.60] | +0.56, +0.51, +0.51 |
+
 ## How visible is the label without the global purity? (exact, infinite copies)
 
 Test accuracy of the best classical learner on exact purities of single qubits, or of every proper subsystem (all subsets except the whole state). 0.5 = invisible.
