@@ -15,6 +15,7 @@ STYLE = {
     "quantum_alt": dict(color="#eb6834", marker="s"),      # the weaker quantum model (1-copy QNN / generic ansatz)
     "classical_state": dict(color="#1baf7a", marker="^"),  # classical, full state vector
     "classical_snap": dict(color="#6250d6", marker="D"),   # classical, measurement snapshots
+    "classical_snap_alt": dict(color="#c2418a", marker="v"),  # classical, richer snapshot features
 }
 SURFACE = "#fcfcfb"
 INK, INK2, GRID = "#0b0b0b", "#52514e", "#e4e3df"

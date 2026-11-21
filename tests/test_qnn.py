@@ -219,3 +219,50 @@ def test_budget_guard_refuses_over_cap():
     with pytest.raises(SystemExit):
         b.check(5)
     b.check(1)
+
+
+@pytest.mark.parametrize("n,depth", [(2, 1), (3, 2), (4, 0), (4, 4)])
+def test_shallow_purity_circuits_prepare_the_stored_states(n, depth):
+    from qiskit.quantum_info import Statevector
+
+    from entangle.states import make_shallow_purity_data
+    d = make_shallow_purity_data(n, 10, depth, seed=2)
+    assert d.y.sum() == 5
+    for i in range(len(d.y)):
+        sv = Statevector(d.circuit(i)).data                    # ancilla = highest qubit
+        A = np.stack([sv[:2 ** n], sv[2 ** n:]], axis=1)
+        rho, ref = A @ A.conj().T, d.states[i] @ d.states[i].conj().T
+        assert np.allclose(rho, ref)
+        assert np.real(np.trace(rho @ rho)) == pytest.approx(d.purity[i])
+        assert (d.purity[i] == pytest.approx(1.0)) == (d.y[i] == 0)
+    # same gates for both classes (pure states run RY(0))
+    assert len({tuple(sorted(d.circuit(i).count_ops().items())) for i in range(len(d.y))}) == 1
+
+
+def test_subset_shadow_purities_match_per_subset_estimator():
+    from entangle.measure import random_pauli_snapshots, shadow_global_purity, shadow_subset_purities
+    from entangle.states import make_shallow_purity_data
+    rng = np.random.default_rng(1)
+    for n in (2, 3, 4):
+        d = make_shallow_purity_data(n, 2, 2, seed=n)
+        for s, b in random_pauli_snapshots(d.states, n, 200, rng):
+            sub = shadow_subset_purities(s, b)
+            for m in range(1, 2 ** n):
+                cols = [q for q in range(n) if m >> q & 1]
+                assert sub[m] == pytest.approx(shadow_global_purity(s[:, cols], b[:, cols]))
+
+
+def test_exact_subset_purities_and_pure_state_symmetry():
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from stage8_shallow_purity import exact_subset_purities
+
+    from entangle.states import make_shallow_purity_data, reduced_purities
+    n = 4
+    d = make_shallow_purity_data(n, 8, 3, seed=5)
+    P = exact_subset_purities(d.states, n)
+    assert np.allclose(P[:, -1], d.purity)
+    full = 2 ** n - 1
+    for k in np.flatnonzero(d.y == 0):
+        assert np.allclose(P[k, [(1 << q) - 1 for q in range(n)]], reduced_purities(d.states[k, :, 0], n))
+        for m in range(1, full):                               # Tr rho_A^2 = Tr rho_Abar^2 for pure states
+            assert P[k, m - 1] == pytest.approx(P[k, (full ^ m) - 1])
